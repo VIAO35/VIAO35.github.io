@@ -2,7 +2,7 @@
   "version": "3.0.0",
   "fechaActualizacion": "2026-07-09",
   "descripcion": "Catalogo de plugins ERP Industrial v3.0 - VIA035 (CORREGIDO)",
-  "baseURL": "https://VIA035.github.io/plugins/",
+  "baseURL": "https://VIAO35.github.io/plugins/",
   "plugins": [
     {
       "id": "FASE1_10",
