@@ -5,18 +5,13 @@
   "baseURL": "https://VIAO35.github.io/plugins/",
   "plugins": [
     {
-      "id": "FASE2_1",
-      "nombre": "Materias Primas",
-      "version": "3.0.0",
-      "descripcion": "CRUD completo de materias primas con multi-moneda. Tabla con busqueda, filtros por categoria, y 5 registros demo.",
-      "url": "https://VIAO35.github.io/plugins/FASE2_1.json",
-      "size": 15234,
-      "autor": "ERP Industrial Team",
-      "fecha": "2026-07-09",
-      "dependencias": ["FASE1_10"],
-      "fasePrincipal": "2",
-      "microFase": "2.1"
-    },
+  "id": "FASE2_1",
+  "nombre": "Materias Primas",
+  "version": "3.0.0",
+  "url": "https://VIAO35.github.io/plugins/FASE2_1.json",
+  "size": 23890,
+  "dependencias": ["FASE1_10"]
+},
     {
       "id": "FASE2_2",
       "nombre": "Formulario Agregar Material",
