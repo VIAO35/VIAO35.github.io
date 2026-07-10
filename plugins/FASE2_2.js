@@ -457,7 +457,9 @@
         var db = erp.getDB();
         if (!db.categorias) db.categorias = [];
         if (db.categorias.length === 0) {
-          db.categorias = window.f22_categoriasDemo.slice();
+          for (var i = 0; i < window.f22_categoriasDemo.length; i++) {
+            db.categorias.push(window.f22_categoriasDemo[i]);
+          }
           erp.saveLocal(db);
           erp.showToast("info", "Categorias", "13 categorias de industria quimica cargadas");
         }
@@ -467,7 +469,9 @@
         var db = erp.getDB();
         if (!db.unidades) db.unidades = [];
         if (db.unidades.length === 0) {
-          db.unidades = window.f22_unidadesDemo.slice();
+          for (var i = 0; i < window.f22_unidadesDemo.length; i++) {
+            db.unidades.push(window.f22_unidadesDemo[i]);
+          }
           erp.saveLocal(db);
           erp.showToast("info", "Unidades", "8 unidades de medida cargadas");
         }
@@ -496,21 +500,28 @@
         var sc = document.getElementById("f22_categoria");
         var su = document.getElementById("f22_unidad");
         var sp = document.getElementById("f22_proveedor");
-        if (sc) {
-          var cs = db.categorias || [];
-          sc.innerHTML = '<option value="" class="empty-select">-- Seleccionar categoria --</option>' +
-            cs.map(function(c) { return '<option value="' + c.id + '">' + c.nombre + '</option>'; }).join("");
+        var htmlCat = '<option value="" class="empty-select">-- Seleccionar categoria --</option>';
+        var htmlUni = '<option value="" class="empty-select">-- Seleccionar unidad --</option>';
+        var htmlProv = '<option value="" class="empty-select">-- Sin proveedor asignado --</option>';
+
+        var cs = db.categorias || [];
+        for (var i = 0; i < cs.length; i++) {
+          htmlCat += '<option value="' + cs[i].id + '">' + cs[i].nombre + '</option>';
         }
-        if (su) {
-          var us = db.unidades || [];
-          su.innerHTML = '<option value="" class="empty-select">-- Seleccionar unidad --</option>' +
-            us.map(function(u) { return '<option value="' + u.id + '">' + u.nombre + ' (' + u.simbolo + ')</option>'; }).join("");
+
+        var us = db.unidades || [];
+        for (var i = 0; i < us.length; i++) {
+          htmlUni += '<option value="' + us[i].id + '">' + us[i].nombre + ' (' + us[i].simbolo + ')</option>';
         }
-        if (sp) {
-          var ps = db.proveedores || [];
-          sp.innerHTML = '<option value="" class="empty-select">-- Sin proveedor asignado --</option>' +
-            ps.map(function(p) { return '<option value="' + p.id + '">' + p.nombre + ' (' + (p.rif || "S/RIF") + ')</option>'; }).join("");
+
+        var ps = db.proveedores || [];
+        for (var i = 0; i < ps.length; i++) {
+          htmlProv += '<option value="' + ps[i].id + '">' + ps[i].nombre + ' (' + (ps[i].rif || "S/RIF") + ')</option>';
         }
+
+        if (sc) sc.innerHTML = htmlCat;
+        if (su) su.innerHTML = htmlUni;
+        if (sp) sp.innerHTML = htmlProv;
       };
 
       window.f22_validar = function() {
