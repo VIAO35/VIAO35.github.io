@@ -1,0 +1,1884 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ERP Industrial v3.0 - Core</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<script>
+try {
+  tailwind.config = {
+    theme: {
+      extend: {
+        colors: {
+          sidebar: '#1e293b',
+          'sidebar-hover': '#334155',
+          'sidebar-active': '#3b82f6',
+          'main-bg': '#0f172a',
+          'card-bg': '#1e293b',
+          'text-primary': '#f1f5f9',
+          'text-secondary': '#94a3b8',
+          accent: '#3b82f6',
+          'accent-hover': '#2563eb',
+          success: '#10b981',
+          warning: '#f59e0b',
+          danger: '#ef4444',
+          border: '#334155',
+        }
+      }
+    }
+  }
+} catch(e) { console.warn("Tailwind config error:", e); }
+</script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',system-ui,sans-serif;background:#0f172a;color:#f1f5f9;min-height:100vh;overflow-x:hidden}
+::-webkit-scrollbar{width:6px;height:6px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:#475569;border-radius:3px}
+::-webkit-scrollbar-thumb:hover{background:#64748b}
+.sidebar{position:fixed;left:0;top:0;width:260px;height:100vh;background:#1e293b;border-right:1px solid #334155;z-index:1000;transition:transform .3s;overflow-y:auto;display:flex;flex-direction:column}
+.sidebar.collapsed{transform:translateX(-260px)}
+.topbar{position:fixed;top:0;left:260px;right:0;height:60px;background:#0f172a;border-bottom:1px solid #334155;display:flex;align-items:center;justify-content:space-between;padding:0 24px;z-index:900;transition:left .3s}
+.topbar.expanded{left:0}
+.main-content{margin-left:260px;margin-top:60px;padding:24px;min-height:calc(100vh - 60px);transition:margin-left .3s}
+.main-content.expanded{margin-left:0}
+.sidebar-header{padding:20px;border-bottom:1px solid #334155;display:flex;align-items:center;gap:12px}
+.logo-icon{width:36px;height:36px;background:#3b82f6;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:bold;color:#fff}
+.logo-text{font-size:16px;font-weight:600;letter-spacing:.5px;color:#f1f5f9}
+.version{font-size:10px;color:#94a3b8;margin-top:2px}
+.nav-section{margin:8px 0}
+.nav-section-title{padding:8px 20px;font-size:10px;text-transform:uppercase;letter-spacing:1px;color:#64748b;font-weight:600}
+.nav-item{display:flex;align-items:center;gap:12px;padding:10px 20px;cursor:pointer;transition:.2s;border-left:3px solid transparent;position:relative;color:#94a3b8}
+.nav-item:hover{background:#334155;color:#f1f5f9}
+.nav-item.active{background:rgba(59,130,246,.15);border-left-color:#3b82f6;color:#3b82f6}
+.nav-item .icon{width:20px;text-align:center;font-size:14px}
+.nav-item .label{font-size:13px}
+.nav-item .phase-badge{position:absolute;right:12px;font-size:9px;padding:2px 6px;border-radius:4px;background:#334155;color:#94a3b8}
+.nav-item.active .phase-badge{background:#3b82f6;color:#fff}
+.nav-item .update-badge{position:absolute;right:12px;top:50%;transform:translateY(-50%);width:8px;height:8px;border-radius:50%;background:#f59e0b;animation:pulse 1.5s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+.sidebar-footer{padding:15px 20px;border-top:1px solid #334155;font-size:11px;color:#64748b;margin-top:auto}
+.toggle-btn{width:36px;height:36px;border-radius:8px;background:#1e293b;border:1px solid #334155;color:#f1f5f9;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:16px;transition:.2s}
+.toggle-btn:hover{background:#334155}
+.breadcrumb{font-size:13px;color:#94a3b8}
+.breadcrumb span{color:#f1f5f9;font-weight:500}
+.clock{font-size:13px;color:#94a3b8;font-variant-numeric:tabular-nums}
+.user-menu{display:flex;align-items:center;gap:10px;cursor:pointer;padding:6px 12px;border-radius:8px;transition:.2s}
+.user-menu:hover{background:rgba(255,255,255,.05)}
+.user-avatar{width:32px;height:32px;border-radius:50%;background:#3b82f6;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600;color:#fff}
+.user-name{font-size:13px;font-weight:500;color:#f1f5f9}
+.user-role{font-size:10px;color:#94a3b8}
+.badge-online{width:8px;height:8px;border-radius:50%;background:#10b981;position:relative}
+.badge-online::after{content:'';position:absolute;inset:-2px;border-radius:50%;border:2px solid #10b981;animation:ping 1.5s infinite}
+@keyframes ping{0%{transform:scale(1);opacity:1}100%{transform:scale(2);opacity:0}}
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px;margin-bottom:24px}
+.kpi-card{background:#1e293b;border:1px solid #334155;border-radius:12px;padding:20px;transition:.2s}
+.kpi-card:hover{border-color:#3b82f6}
+.kpi-card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.kpi-card-title{font-size:12px;text-transform:uppercase;letter-spacing:.5px;color:#94a3b8}
+.kpi-card-icon{width:36px;height:36px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px}
+.kpi-card-icon.blue{background:rgba(59,130,246,.15);color:#3b82f6}
+.kpi-card-icon.green{background:rgba(16,185,129,.15);color:#10b981}
+.kpi-card-icon.amber{background:rgba(245,158,11,.15);color:#f59e0b}
+.kpi-card-icon.red{background:rgba(239,68,68,.15);color:#ef4444}
+.kpi-card-value{font-size:28px;font-weight:700;margin-bottom:4px;color:#f1f5f9}
+.kpi-card-change{font-size:12px;display:flex;align-items:center;gap:4px}
+.kpi-card-change.up{color:#10b981}
+.kpi-card-change.down{color:#ef4444}
+.chart-card{background:#1e293b;border:1px solid #334155;border-radius:12px;padding:20px;margin-bottom:24px}
+.chart-card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+.chart-card-title{font-size:16px;font-weight:600;color:#f1f5f9}
+.chart-wrapper{height:300px;position:relative}
+.config-panel{background:#1e293b;border:1px solid #334155;border-radius:12px;padding:20px;margin-bottom:24px}
+.config-panel-title{font-size:16px;font-weight:600;margin-bottom:16px;display:flex;align-items:center;gap:8px;color:#f1f5f9}
+.config-row{display:flex;align-items:center;gap:12px;margin-bottom:12px;flex-wrap:wrap}
+.config-label{font-size:13px;color:#94a3b8;min-width:120px}
+.config-input{flex:1;min-width:200px;padding:8px 12px;border-radius:6px;border:1px solid #334155;background:#0f172a;color:#f1f5f9;font-size:13px;outline:none}
+.config-input:focus{border-color:#3b82f6}
+.btn{padding:8px 16px;border-radius:6px;border:none;font-size:13px;font-weight:500;cursor:pointer;transition:.2s;display:inline-flex;align-items:center;gap:6px}
+.btn-primary{background:#3b82f6;color:#fff}
+.btn-primary:hover{background:#2563eb}
+.btn-success{background:#10b981;color:#fff}
+.btn-success:hover{background:#059669}
+.btn-danger{background:#ef4444;color:#fff}
+.btn-danger:hover{background:#dc2626}
+.btn-secondary{background:#334155;color:#f1f5f9;border:1px solid #475569}
+.btn-secondary:hover{background:#475569}
+.btn-sm{padding:5px 12px;font-size:12px}
+.data-table{width:100%;border-collapse:collapse;font-size:13px}
+.data-table th{text-align:left;padding:12px 16px;background:#334155;font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:#94a3b8;font-weight:600;border-bottom:1px solid #475569}
+.data-table td{padding:12px 16px;border-bottom:1px solid #334155;color:#f1f5f9}
+.data-table tr:hover td{background:rgba(255,255,255,.02)}
+.data-table .actions{display:flex;gap:6px}
+.data-table .badge{padding:3px 10px;border-radius:4px;font-size:11px;font-weight:500}
+.data-table .badge-success{background:rgba(16,185,129,.15);color:#10b981}
+.data-table .badge-warning{background:rgba(245,158,11,.15);color:#f59e0b}
+.data-table .badge-danger{background:rgba(239,68,68,.15);color:#ef4444}
+.data-table .badge-info{background:rgba(59,130,246,.15);color:#3b82f6}
+.phase-progress{background:#1e293b;border:1px solid #334155;border-radius:12px;padding:20px;margin-bottom:24px}
+.phase-progress-title{font-size:16px;font-weight:600;margin-bottom:16px;color:#f1f5f9}
+.phase-list{display:flex;flex-direction:column;gap:8px}
+.phase-row{display:flex;align-items:center;gap:12px;padding:10px 14px;border-radius:8px;background:#334155;transition:.2s}
+.phase-row:hover{background:rgba(59,130,246,.1)}
+.phase-row.completed{border-left:3px solid #10b981}
+.phase-row.active{border-left:3px solid #3b82f6}
+.phase-row.pending{border-left:3px solid #475569}
+.phase-num{width:28px;height:28px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;background:#1e293b;border:1px solid #475569;color:#94a3b8}
+.phase-row.completed .phase-num{background:#10b981;color:#fff;border-color:#10b981}
+.phase-row.active .phase-num{background:#3b82f6;color:#fff;border-color:#3b82f6}
+.phase-name{font-size:13px;font-weight:500;flex:1;color:#f1f5f9}
+.phase-mf{font-size:11px;color:#94a3b8}
+.phase-status{font-size:11px;padding:3px 10px;border-radius:4px;font-weight:500}
+.phase-status.done{background:rgba(16,185,129,.15);color:#10b981}
+.phase-status.work{background:rgba(59,130,246,.15);color:#3b82f6}
+.phase-status.wait{background:rgba(71,85,105,.3);color:#94a3b8}
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:2000;display:none;align-items:center;justify-content:center;padding:20px}
+.modal-overlay.active{display:flex}
+.modal{background:#1e293b;border:1px solid #334155;border-radius:12px;width:100%;max-width:500px;max-height:90vh;overflow-y:auto;animation:modalIn .2s}
+.modal-wide{max-width:700px}
+@keyframes modalIn{from{opacity:0;transform:scale(.95)}to{opacity:1;transform:scale(1)}}
+.modal-header{padding:20px 20px 0;display:flex;align-items:center;justify-content:space-between}
+.modal-title{font-size:16px;font-weight:600;color:#f1f5f9}
+.modal-close{width:32px;height:32px;border-radius:6px;background:#334155;border:none;color:#f1f5f9;cursor:pointer;font-size:18px;display:flex;align-items:center;justify-content:center}
+.modal-close:hover{background:#ef4444}
+.modal-body{padding:20px;color:#94a3b8;font-size:14px}
+.modal-footer{padding:0 20px 20px;display:flex;justify-content:flex-end;gap:10px}
+.toast-container{position:fixed;top:20px;right:20px;z-index:3000;display:flex;flex-direction:column;gap:8px}
+.toast{background:#1e293b;border:1px solid #334155;border-radius:8px;padding:14px 18px;display:flex;align-items:center;gap:12px;box-shadow:0 10px 40px rgba(0,0,0,.4);animation:toastIn .3s;min-width:300px}
+@keyframes toastIn{from{transform:translateX(100%);opacity:0}to{transform:translateX(0);opacity:1}}
+.toast.success{border-left:3px solid #10b981}
+.toast.error{border-left:3px solid #ef4444}
+.toast.warning{border-left:3px solid #f59e0b}
+.toast.info{border-left:3px solid #3b82f6}
+.toast-icon{font-size:18px}
+.toast-content{flex:1}
+.toast-title{font-size:13px;font-weight:600;color:#f1f5f9}
+.toast-msg{font-size:12px;color:#94a3b8;margin-top:2px}
+.loading-overlay{position:fixed;inset:0;background:rgba(15,23,42,.8);z-index:5000;display:none;align-items:center;justify-content:center;flex-direction:column;gap:16px}
+.loading-overlay.active{display:flex}
+.spinner{width:48px;height:48px;border:3px solid #334155;border-top-color:#3b82f6;border-radius:50%;animation:spin 1s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loading-text{font-size:14px;color:#94a3b8}
+.loading-bar{width:200px;height:4px;background:#334155;border-radius:2px;overflow:hidden}
+.loading-bar-fill{height:100%;background:#3b82f6;border-radius:2px;transition:width .3s;width:0%}
+.rollback-panel{background:#1e293b;border:1px solid #334155;border-radius:12px;padding:20px;margin-bottom:24px}
+.rollback-snapshots{max-height:300px;overflow-y:auto;margin-top:12px}
+.snapshot-row{display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:6px;background:#334155;margin-bottom:6px;font-size:12px;transition:.2s}
+.snapshot-row:hover{background:rgba(59,130,246,.1)}
+.snapshot-date{font-family:monospace;color:#94a3b8;min-width:160px}
+.snapshot-desc{flex:1;color:#f1f5f9}
+.snapshot-actions{display:flex;gap:6px}
+.page-title{font-size:24px;font-weight:700;margin-bottom:4px;color:#f1f5f9}
+.page-subtitle{font-size:13px;color:#94a3b8;margin-bottom:24px}
+@media(max-width:768px){.sidebar{transform:translateX(-260px)}.sidebar.open{transform:translateX(0)}.topbar{left:0}.main-content{margin-left:0}.kpi-grid{grid-template-columns:1fr}}
+@media(min-width:769px) and (max-width:1024px){.kpi-grid{grid-template-columns:repeat(2,1fr)}}
+@media(min-width:1025px){.kpi-grid{grid-template-columns:repeat(4,1fr)}}
+.tab-panel{display:flex;gap:4px;margin-bottom:16px;border-bottom:1px solid #334155}
+.tab-btn{padding:10px 20px;font-size:13px;font-weight:500;color:#94a3b8;background:transparent;border:none;border-bottom:2px solid transparent;cursor:pointer;transition:.2s}
+.tab-btn:hover{color:#f1f5f9}
+.tab-btn.active{color:#3b82f6;border-bottom-color:#3b82f6}
+.tab-content{display:none}
+.tab-content.active{display:block}
+.formula-card{background:#1e293b;border:1px solid #334155;border-radius:12px;padding:16px;margin-bottom:12px;transition:.2s}
+.formula-card:hover{border-color:#3b82f6}
+.formula-card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.formula-card-title{font-size:14px;font-weight:600;color:#f1f5f9}
+.formula-card-meta{font-size:12px;color:#94a3b8}
+.tasa-card{background:#1e293b;border:1px solid #334155;border-radius:12px;padding:16px;margin-bottom:12px}
+.tasa-card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.tasa-card-title{font-size:14px;font-weight:600;color:#f1f5f9}
+.tasa-card-value{font-size:20px;font-weight:700;color:#3b82f6}
+.tasa-card-meta{font-size:12px;color:#94a3b8}
+.calc-row{display:flex;align-items:center;gap:12px;padding:10px;border-radius:8px;background:#334155;margin-bottom:8px}
+.calc-label{font-size:13px;color:#94a3b8;min-width:100px}
+.calc-value{font-size:16px;font-weight:600;color:#f1f5f9;flex:1}
+.badge{padding:3px 10px;border-radius:4px;font-size:11px;font-weight:500}
+.badge-green{background:rgba(16,185,129,.15);color:#10b981}
+.badge-yellow{background:rgba(245,158,11,.15);color:#f59e0b}
+.badge-red{background:rgba(239,68,68,.15);color:#ef4444}
+.badge-blue{background:rgba(59,130,246,.15);color:#3b82f6}
+.jsonbin-status{display:flex;align-items:center;gap:6px;margin-top:6px}
+.jsonbin-status .dot{width:8px;height:8px;border-radius:50%}
+.jsonbin-status .dot.online{background:#10b981}
+.jsonbin-status .dot.offline{background:#ef4444}
+.jsonbin-status .dot.syncing{background:#f59e0b;animation:pulse 1s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+.section-divider{height:1px;background:#334155;margin:16px 0}
+.form-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:16px}
+.form-group{display:flex;flex-direction:column;gap:6px}
+.form-group label{font-size:12px;font-weight:500;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px}
+.form-group input,.form-group select,.form-group textarea{padding:10px 12px;border-radius:6px;border:1px solid #334155;background:#0f172a;color:#f1f5f9;font-size:13px;outline:none}
+.form-group input:focus,.form-group select:focus,.form-group textarea:focus{border-color:#3b82f6}
+.form-group textarea{min-height:80px;resize:vertical}
+.update-item{padding:12px;border-radius:8px;background:#334155;margin-bottom:8px;display:flex;align-items:center;gap:12px}
+.update-item:hover{background:rgba(59,130,246,.1)}
+.update-item-icon{width:40px;height:40px;border-radius:8px;background:rgba(59,130,246,.15);display:flex;align-items:center;justify-content:center;color:#3b82f6;font-size:18px}
+.update-item-info{flex:1}
+.update-item-title{font-size:14px;font-weight:600;color:#f1f5f9}
+.update-item-desc{font-size:12px;color:#94a3b8}
+.update-item-version{font-size:11px;color:#64748b}
+.update-progress{width:100%;height:4px;background:#334155;border-radius:2px;margin-top:8px;overflow:hidden}
+.update-progress-bar{height:100%;background:#3b82f6;border-radius:2px;transition:width .3s}
+</style>
+</head>
+<body>
+
+<div class="loading-overlay" id="loadingOverlay">
+  <div class="spinner"></div>
+  <div class="loading-text" id="loadingText">Cargando...</div>
+  <div class="loading-bar" id="loadingBar" style="display:none"><div class="loading-bar-fill" id="loadingBarFill"></div></div>
+</div>
+
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-header">
+    <div class="logo-icon"><i class="fas fa-industry"></i></div>
+    <div>
+      <div class="logo-text">ERP Industrial</div>
+      <div class="version" id="versionDisplay">v3.0.0 | Core</div>
+    </div>
+  </div>
+  <div class="nav-section">
+    <div class="nav-section-title">Principal</div>
+    <div class="nav-item active" data-page="dashboard" onclick="showModule('dashboard')">
+      <span class="icon"><i class="fas fa-chart-line"></i></span>
+      <span class="label">Dashboard</span>
+      <span class="phase-badge">1.0</span>
+    </div>
+    <div class="nav-item" data-page="config" onclick="showModule('config')">
+      <span class="icon"><i class="fas fa-cog"></i></span>
+      <span class="label">Configuracion</span>
+      <span class="phase-badge">SYS</span>
+    </div>
+    <div class="nav-item" data-page="respaldo" onclick="showModule('respaldo')">
+      <span class="icon"><i class="fas fa-undo"></i></span>
+      <span class="label">Respaldo</span>
+      <span class="phase-badge">SYS</span>
+    </div>
+  </div>
+  <div class="nav-section">
+    <div class="nav-section-title">Fases Instaladas</div>
+    <div id="navPluginsContainer"></div>
+  </div>
+  <div class="nav-section">
+    <div class="nav-section-title">Sistema</div>
+    <div class="nav-item" data-page="updates" onclick="showModule('updates')">
+      <span class="icon"><i class="fas fa-sync-alt"></i></span>
+      <span class="label">Actualizaciones</span>
+      <span class="phase-badge" id="updatesBadge" style="display:none">0</span>
+      <span class="update-badge" id="updatesDot" style="display:none"></span>
+    </div>
+    <div class="nav-item" data-page="plugins" onclick="showModule('plugins')">
+      <span class="icon"><i class="fas fa-puzzle-piece"></i></span>
+      <span class="label">Plugins</span>
+      <span class="phase-badge">SYS</span>
+    </div>
+  </div>
+  <div class="sidebar-footer">
+    <div>ERP Core v3.0</div>
+    <div style="margin-top:4px;font-size:10px;color:#64748b">Offline-first | Auto-update</div>
+    <div style="margin-top:4px;font-size:10px" id="updateStatusText">--</div>
+  </div>
+</aside>
+
+<header class="topbar" id="topbar">
+  <div style="display:flex;align-items:center;gap:16px">
+    <button class="toggle-btn" onclick="toggleSidebar()"><i class="fas fa-bars"></i></button>
+    <div class="breadcrumb">ERP v3.0 / <span id="pageTitle">Dashboard</span></div>
+  </div>
+  <div style="display:flex;align-items:center;gap:16px">
+    <div class="clock" id="clock">--:--:--</div>
+    <div class="user-menu">
+      <div class="badge-online"></div>
+      <div style="text-align:right">
+        <div class="user-name">Admin</div>
+        <div class="user-role">Superusuario</div>
+      </div>
+      <div class="user-avatar">A</div>
+    </div>
+  </div>
+</header>
+
+<main class="main-content" id="mainContent">
+
+<!-- DASHBOARD -->
+<div id="mod-dashboard" class="module-content">
+  <h1 class="page-title">Dashboard</h1>
+  <p class="page-subtitle">Panel de control principal - ERP Core v3.0</p>
+  <div class="kpi-grid">
+    <div class="kpi-card">
+      <div class="kpi-card-header"><span class="kpi-card-title">Ventas del Mes</span><div class="kpi-card-icon blue"><i class="fas fa-chart-line"></i></div></div>
+      <div class="kpi-card-value" id="kpiVentas">Bs. 0,00</div>
+      <div class="kpi-card-change up"><i class="fas fa-arrow-up"></i> 12.5% vs mes anterior</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-card-header"><span class="kpi-card-title">Plugins Activos</span><div class="kpi-card-icon green"><i class="fas fa-puzzle-piece"></i></div></div>
+      <div class="kpi-card-value" id="kpiPlugins">0</div>
+      <div class="kpi-card-change up"><i class="fas fa-arrow-up"></i> Sistema actualizado</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-card-header"><span class="kpi-card-title">Stock Bajo</span><div class="kpi-card-icon red"><i class="fas fa-exclamation-triangle"></i></div></div>
+      <div class="kpi-card-value" id="kpiStockBajo">0</div>
+      <div class="kpi-card-change down"><i class="fas fa-arrow-down"></i> Requiere atencion</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-card-header"><span class="kpi-card-title">Version Core</span><div class="kpi-card-icon amber"><i class="fas fa-code-branch"></i></div></div>
+      <div class="kpi-card-value" id="kpiVersion">3.0.0</div>
+      <div class="kpi-card-change up"><i class="fas fa-check"></i> Estable</div>
+    </div>
+  </div>
+  <div class="chart-card">
+    <div class="chart-card-header"><span class="chart-card-title">Evolucion de Ventas (VES)</span></div>
+    <div class="chart-wrapper"><canvas id="chartVentas"></canvas></div>
+  </div>
+  <div class="phase-progress">
+    <div class="phase-progress-title"><i class="fas fa-rocket"></i> Progreso del Plan Agil (104 Micro-Fases)</div>
+    <div class="phase-list" id="phaseList"></div>
+  </div>
+</div>
+
+<!-- CONFIG -->
+<div id="mod-config" class="module-content" style="display:none">
+  <h1 class="page-title">Configuracion del Sistema</h1>
+  <p class="page-subtitle">Parametros generales y fuente de actualizaciones</p>
+  <div class="config-panel">
+    <div class="config-panel-title"><i class="fas fa-building"></i> Datos de la Empresa</div>
+    <div class="form-grid">
+      <div class="form-group"><label>Nombre Empresa</label><input type="text" class="config-input" id="cfgEmpresa" value="Quimica Industrial del Norte S.A."></div>
+      <div class="form-group"><label>RIF</label><input type="text" class="config-input" id="cfgRIF" value="J-12345678-9"></div>
+      <div class="form-group"><label>Direccion</label><input type="text" class="config-input" id="cfgDireccion" value="Av. Industrial 1230, Lima, Peru"></div>
+    </div>
+  </div>
+  <div class="config-panel">
+    <div class="config-panel-title"><i class="fas fa-coins"></i> Moneda y Finanzas</div>
+    <div class="form-grid">
+      <div class="form-group"><label>Moneda Base</label>
+        <select class="config-input" id="cfgMonedaBase">
+          <option value="VES">VES (Bolivar)</option>
+          <option value="USD">USD (Dolar)</option>
+          <option value="EUR">EUR (Euro)</option>
+        </select>
+      </div>
+      <div class="form-group"><label>IVA %</label><input type="number" class="config-input" id="cfgIVA" value="16"></div>
+      <div class="form-group"><label>Decimales</label><input type="number" class="config-input" id="cfgDecimales" value="2" min="0" max="4"></div>
+      <div class="form-group"><label>Formato Fecha</label>
+        <select class="config-input" id="cfgFormatoFecha">
+          <option value="DD/MM/YYYY">DD/MM/YYYY</option>
+          <option value="MM/DD/YYYY">MM/DD/YYYY</option>
+          <option value="YYYY-MM-DD">YYYY-MM-DD</option>
+        </select>
+      </div>
+    </div>
+    <div style="margin-top:12px"><button class="btn btn-primary" onclick="saveConfig()"><i class="fas fa-save"></i> Guardar Configuracion</button></div>
+  </div>
+  <div class="config-panel">
+    <div class="config-panel-title"><i class="fas fa-cloud"></i> Fuente de Actualizaciones (Catalogo)</div>
+    <div class="config-row"><span class="config-label">URL Catalogo:</span><input type="text" class="config-input" id="cfgCatalogoURL" placeholder="https://raw.githubusercontent.com/usuario/repo/main/catalogo.json"></div>
+    <div class="config-row"><span class="config-label">Intervalo Check:</span>
+      <select class="config-input" id="cfgCheckInterval">
+        <option value="0">Solo manual</option>
+        <option value="3600000">Cada 1 hora</option>
+        <option value="21600000">Cada 6 horas</option>
+        <option value="86400000">Cada 24 horas</option>
+      </select>
+    </div>
+    <div class="config-row"><span class="config-label"></span>
+      <button class="btn btn-primary" onclick="saveUpdateConfig()"><i class="fas fa-save"></i> Guardar</button>
+      <button class="btn btn-success" onclick="checkForUpdates(true)"><i class="fas fa-search"></i> Verificar Ahora</button>
+    </div>
+  </div>
+  <div class="config-panel">
+    <div class="config-panel-title"><i class="fas fa-chart-bar"></i> Estado del Sistema</div>
+    <div class="config-row"><span class="config-label">Estado:</span><span id="sysStatus" style="font-size:13px;color:#94a3b8">--</span></div>
+    <div class="config-row"><span class="config-label">Ultimo Check:</span><span id="sysLastCheck" style="font-size:13px;color:#94a3b8">--</span></div>
+    <div class="config-row"><span class="config-label">Plugins:</span><span id="sysPlugins" style="font-size:13px;color:#94a3b8">--</span></div>
+    <div class="config-row"><span class="config-label">Tamano DB:</span><span id="sysSize" style="font-size:13px;color:#94a3b8">--</span></div>
+  </div>
+</div>
+
+<!-- RESPALDO -->
+<div id="mod-respaldo" class="module-content" style="display:none">
+  <h1 class="page-title">Respaldo / Snapshots</h1>
+  <p class="page-subtitle">Gestiona puntos de restauracion del sistema</p>
+  <div class="rollback-panel">
+    <div style="display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap">
+      <button class="btn btn-primary" onclick="createSnapshot()"><i class="fas fa-camera"></i> Crear Snapshot</button>
+      <button class="btn btn-success" onclick="exportFullJSON()"><i class="fas fa-upload"></i> Exportar JSON</button>
+      <button class="btn btn-secondary" onclick="document.getElementById('importFile').click()"><i class="fas fa-download"></i> Importar JSON</button>
+      <input type="file" id="importFile" style="display:none" accept=".json" onchange="handleImport(event)">
+    </div>
+    <div class="rollback-snapshots" id="snapshotList"></div>
+  </div>
+  <div class="config-panel">
+    <div class="config-panel-title"><i class="fas fa-exclamation-triangle"></i> Zona Peligrosa</div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap">
+      <button class="btn btn-danger" onclick="resetAllData()"><i class="fas fa-trash"></i> Resetear Todo</button>
+      <button class="btn btn-secondary" onclick="initDemoData()"><i class="fas fa-redo"></i> Datos Demo</button>
+    </div>
+  </div>
+</div>
+
+<!-- ACTUALIZACIONES -->
+<div id="mod-updates" class="module-content" style="display:none">
+  <h1 class="page-title"><i class="fas fa-sync-alt"></i> Actualizaciones</h1>
+  <p class="page-subtitle">Gestiona plugins y actualizaciones del sistema</p>
+  <div class="config-panel">
+    <div class="config-panel-title"><i class="fas fa-search"></i> Buscar Actualizaciones</div>
+    <div style="display:flex;gap:10px;margin-bottom:16px">
+      <button class="btn btn-primary" onclick="checkForUpdates(true)"><i class="fas fa-search"></i> Verificar Ahora</button>
+      <button class="btn btn-secondary" onclick="installAllUpdates()"><i class="fas fa-download"></i> Instalar Todas</button>
+    </div>
+    <div id="updatesContainer">
+      <div style="color:#94a3b8;text-align:center;padding:40px">
+        <i class="fas fa-sync" style="font-size:48px;margin-bottom:16px;display:block"></i>
+        Presiona "Verificar Ahora" para buscar actualizaciones disponibles.
+      </div>
+    </div>
+  </div>
+  <div class="config-panel">
+    <div class="config-panel-title"><i class="fas fa-history"></i> Historial de Actualizaciones</div>
+    <div id="updatesHistory"><div style="color:#94a3b8;text-align:center;padding:20px">Sin historial</div></div>
+  </div>
+</div>
+
+<!-- PLUGINS -->
+<div id="mod-plugins" class="module-content" style="display:none">
+  <h1 class="page-title"><i class="fas fa-puzzle-piece"></i> Plugins</h1>
+  <p class="page-subtitle">Gestiona plugins instalados</p>
+  <div class="config-panel">
+    <div class="config-panel-title"><i class="fas fa-cubes"></i> Plugins Instalados</div>
+    <div id="pluginsList"><div style="color:#94a3b8;text-align:center;padding:20px">No hay plugins instalados</div></div>
+  </div>
+  <div class="config-panel">
+    <div class="config-panel-title"><i class="fas fa-upload"></i> Instalar Plugin Manual</div>
+    <div class="form-grid">
+      <div class="form-group"><label>Seleccionar archivo .js</label><input type="file" id="pluginFile" accept=".js" class="config-input" onchange="handlePluginFile(event)"></div>
+    </div>
+    <div style="margin-top:12px">
+      <button class="btn btn-secondary" onclick="rehydratePlugins()"><i class="fas fa-hdd"></i> Re-hidratar desde LocalStorage</button>
+    </div>
+  </div>
+</div>
+
+</main>
+
+<div class="toast-container" id="toastContainer"></div>
+
+<!-- Modal Generico -->
+<div class="modal-overlay" id="confirmModal">
+  <div class="modal">
+    <div class="modal-header"><div class="modal-title" id="confirmTitle">Confirmar</div><button class="modal-close" onclick="closeModal()">&times;</button></div>
+    <div class="modal-body" id="confirmBody">Estas seguro?</div>
+    <div class="modal-footer"><button class="btn btn-secondary" onclick="closeModal()">Cancelar</button><button class="btn btn-danger" id="confirmBtn" onclick="">Confirmar</button></div>
+  </div>
+</div>
+
+<!-- Modal de Actualizaciones -->
+<div class="modal-overlay" id="updateModal">
+  <div class="modal modal-wide">
+    <div class="modal-header"><div class="modal-title"><i class="fas fa-sync-alt" style="color:#f59e0b"></i> Actualizaciones Disponibles</div><button class="modal-close" onclick="closeUpdateModal()">&times;</button></div>
+    <div class="modal-body" id="updateModalBody"><p>Cargando...</p></div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeUpdateModal()">Mas Tarde</button>
+      <button class="btn btn-primary" id="installSelectedBtn" onclick="installSelectedUpdates()"><i class="fas fa-download"></i> Instalar Seleccionadas</button>
+    </div>
+  </div>
+</div>
+
+<script>
+
+// ERP INDUSTRIAL v3.0 - CORE CON AUTO-UPDATE
+// Arquitectura: Core + Plugins descargables desde catalogo remoto
+
+var ERP_VERSION = "3.0.0";
+var ERP_SCHEMA_VERSION = "3.0.0";
+
+// Configuracion por defecto
+var config = {
+  monedaBase: "VES",
+  iva: 16,
+  empresa: "Quimica Industrial del Norte S.A.",
+  rif: "J-12345678-9",
+  direccion: "Av. Industrial 1230, Lima, Peru",
+  decimales: 2,
+  formatoFecha: "DD/MM/YYYY",
+  catalogoURL: "",
+  checkInterval: 0,
+  lastCheck: null
+};
+
+// Estado global
+var plugins = {};
+var pluginsMeta = {};
+var catalogoRemoto = [];
+var updatesDisponibles = [];
+var chartInstance = null;
+var checkIntervalId = null;
+var modalQueue = [];
+var modalActive = false;
+
+// Schema plano v3.0
+function getEmptyDB() {
+  var hoy = new Date().toISOString().split("T")[0];
+  return {
+    version: ERP_VERSION,
+    schemaVersion: ERP_SCHEMA_VERSION,
+    fechaCreacion: new Date().toISOString(),
+    ultimaModificacion: new Date().toISOString(),
+    config: {
+      monedaBase: config.monedaBase,
+      iva: config.iva,
+      empresa: config.empresa,
+      rif: config.rif,
+      direccion: config.direccion,
+      decimales: config.decimales,
+      formatoFecha: config.formatoFecha,
+      catalogoURL: config.catalogoURL,
+      checkInterval: config.checkInterval,
+      lastCheck: config.lastCheck
+    },
+    monedas: [
+      {codigo:"VES", nombre:"Bolivar Soberano", simbolo:"Bs.", decimales:2, esBase: config.monedaBase === "VES"},
+      {codigo:"USD", nombre:"Dolar Americano", simbolo:"$", decimales:2, esBase: config.monedaBase === "USD"},
+      {codigo:"EUR", nombre:"Euro", simbolo:"€", decimales:2, esBase: config.monedaBase === "EUR"}
+    ],
+    tasasCambio: [
+      {id:"TASA001", fecha:hoy, ves_a_usd:0.0016129, ves_a_eur:0.0013986, usd_a_eur:0.8672, activa:true, tipo:"oficial", descripcion:"Tasa oficial BCV"}
+    ],
+    materiasPrimas: [],
+    categorias: [
+      {id:"CAT001", nombre:"Bases", descripcion:"Bases quimicas"},
+      {id:"CAT002", nombre:"Acidos", descripcion:"Acidos industriales"},
+      {id:"CAT003", nombre:"Desinfectantes", descripcion:"Desinfectantes"},
+      {id:"CAT004", nombre:"Empaque", descripcion:"Materiales de empaque"}
+    ],
+    unidades: [
+      {id:"UN001", nombre:"Kilogramo", simbolo:"kg"},
+      {id:"UN002", nombre:"Litro", simbolo:"L"},
+      {id:"UN003", nombre:"Unidad", simbolo:"und"}
+    ],
+    proveedores: [],
+    ordenesCompra: [],
+    clientes: [],
+    productosTerminados: [],
+    cotizaciones: [],
+    ordenesVenta: [],
+    facturas: [],
+    pagos: [],
+    formulaciones: [],
+    ordenesProduccion: [],
+    controlesCalidad: [],
+    lotes: [],
+    movimientosAlmacen: [],
+    empleados: [],
+    asistencias: [],
+    nominas: [],
+    usuarios: [
+      {id:"USR001", nombre:"Administrador", username:"admin", email:"admin@empresa.com", rol:"Administrador", estado:"Activo", ultimoAcceso: new Date().toISOString()}
+    ],
+    roles: [
+      {id:"ROL001", nombre:"Superadmin", permisos:{"*":["ver","crear","editar","eliminar","aprobar"]}},
+      {id:"ROL002", nombre:"Operador", permisos:{almacen:["ver","crear","editar"], produccion:["ver","crear"], reportes:["ver"]}}
+    ],
+    auditoria: [],
+    snapshots: [],
+    pluginsInstalled: [],
+    pluginsHistory: [],
+    ventasMensuales: [
+      {mes:"Ene", ves:1250000, usd:22600, eur:20700},
+      {mes:"Feb", ves:1380000, usd:24900, eur:22800},
+      {mes:"Mar", ves:1520000, usd:27400, eur:25100},
+      {mes:"Abr", ves:1450000, usd:26100, eur:23900},
+      {mes:"May", ves:1680000, usd:30300, eur:27700},
+      {mes:"Jun", ves:1820000, usd:32800, eur:30000}
+    ]
+  };
+}
+
+// API ERP inyectada a plugins
+var erp = {
+  version: ERP_VERSION,
+
+  getDB: function() {
+    var data = localStorage.getItem("erp_data_v3");
+    if (!data) {
+      var db = getEmptyDB();
+      localStorage.setItem("erp_data_v3", JSON.stringify(db));
+      return db;
+    }
+    try {
+      return JSON.parse(data);
+    } catch(e) {
+      console.error("ERP DB corrupta, reiniciando");
+      var db = getEmptyDB();
+      localStorage.setItem("erp_data_v3", JSON.stringify(db));
+      return db;
+    }
+  },
+
+  saveLocal: function(db) {
+    db.ultimaModificacion = new Date().toISOString();
+    try {
+      localStorage.setItem("erp_data_v3", JSON.stringify(db));
+    } catch(e) {
+      if (e.name === "QuotaExceededError") {
+        _showToastImpl("error", "Almacenamiento Lleno", "Elimina snapshots antiguos");
+      }
+      throw e;
+    }
+    updateSystemStatus();
+  },
+
+  showToast: function(type, title, msg) { _showToastImpl(type, title, msg); },
+  showLoading: function(show, text) { showLoading(show, text); },
+  showConfirm: function(title, body, onConfirm) { showConfirm(title, body, onConfirm); },
+
+  formatearMoneda: function(monto, moneda) { return formatearMoneda(monto, moneda); },
+
+  calcularIVA: function(monto, pct) {
+    var porcentaje = pct || config.iva;
+    var montoIVA = monto * (porcentaje / 100);
+    return { porcentaje: porcentaje, monto: montoIVA, total: monto + montoIVA };
+  },
+
+  genId: function(prefijo) {
+    var db = erp.getDB();
+    var keys = Object.keys(db);
+    var maxNum = 0;
+    for (var i = 0; i < keys.length; i++) {
+      var arr = db[keys[i]];
+      if (Array.isArray(arr) && arr.length > 0 && arr[0].id) {
+        for (var j = 0; j < arr.length; j++) {
+          var item = arr[j];
+          if (item.id && item.id.indexOf(prefijo) === 0) {
+            var num = parseInt(item.id.replace(prefijo, "")) || 0;
+            if (num > maxNum) maxNum = num;
+          }
+        }
+      }
+    }
+    return prefijo + String(maxNum + 1).padStart(3, "0");
+  },
+
+  convertirMoneda: function(monto, desde, hasta, fecha) { return convertirMoneda(monto, desde, hasta, fecha); },
+  obtenerTasa: function(desde, hasta, fecha) { return obtenerTasa(desde, hasta, fecha); },
+  config: config,
+
+  // Registro de plugins - punto de entrada para las fases
+  registerPlugin: function(pluginDef) {
+    if (!pluginDef || !pluginDef.id) {
+      console.error("ERP: Plugin sin ID");
+      return false;
+    }
+    // Validar dependencias
+    if (pluginDef.dependencias && pluginDef.dependencias.length > 0) {
+      var db = erp.getDB();
+      var instalados = db.pluginsInstalled || [];
+      var faltantes = [];
+      for (var d = 0; d < pluginDef.dependencias.length; d++) {
+        var depId = pluginDef.dependencias[d];
+        var encontrado = false;
+        for (var p = 0; p < instalados.length; p++) {
+          if (instalados[p].id === depId) { encontrado = true; break; }
+        }
+        if (!encontrado) faltantes.push(depId);
+      }
+      if (faltantes.length > 0) {
+        console.error("ERP: Dependencias faltantes para " + pluginDef.id + ": " + faltantes.join(", "));
+        _showToastImpl("error", "Dependencias Faltantes", pluginDef.id + " requiere: " + faltantes.join(", "));
+        return false;
+      }
+    }
+    // Validar schemaVersionRequerida
+    if (pluginDef.schemaVersionRequerida) {
+      if (compareVersions(pluginDef.schemaVersionRequerida, ERP_SCHEMA_VERSION) > 0) {
+        console.error("ERP: Schema version requerida " + pluginDef.schemaVersionRequerida + " > " + ERP_SCHEMA_VERSION);
+        _showToastImpl("error", "Version Incompatible", "Requiere schema v" + pluginDef.schemaVersionRequerida);
+        return false;
+      }
+    }
+    // Validar funciones peligrosas
+    var codigoStr = (pluginDef.js || "") + (pluginDef.html || "") + (pluginDef.css || "");
+    var peligrosos = [
+      {patron: /eval\s*\(/, desc: "eval()"},
+      {patron: /Function\s*\(/, desc: "Function()"},
+      {patron: /document\.write/, desc: "document.write"},
+      {patron: /localStorage\.clear\s*\(/, desc: "localStorage.clear()"}
+    ];
+    for (var i = 0; i < peligrosos.length; i++) {
+      if (peligrosos[i].patron.test(codigoStr)) {
+        console.error("ERP: Plugin bloqueado - contiene " + peligrosos[i].desc);
+        _showToastImpl("error", "Plugin Bloqueado", "Codigo no permitido: " + peligrosos[i].desc);
+        return false;
+      }
+    }
+    // Guardar en memoria
+    plugins[pluginDef.id] = pluginDef;
+    // Inyectar CSS
+    if (pluginDef.css) {
+      var styleId = "erp-css-" + pluginDef.id;
+      var existente = document.getElementById(styleId);
+      if (existente) existente.remove();
+      var style = document.createElement("style");
+      style.id = styleId;
+      style.textContent = pluginDef.css;
+      document.head.appendChild(style);
+    }
+    // Inyectar HTML (con sanitización)
+    if (pluginDef.html) {
+      var modId = "mod-" + pluginDef.id.toLowerCase().replace(/\./g, "-");
+      var existenteMod = document.getElementById(modId);
+      if (existenteMod) existenteMod.remove();
+      var wrapper = document.createElement("div");
+      wrapper.id = modId;
+      wrapper.className = "module-content";
+      wrapper.style.display = "none";
+      // Sanitizar HTML: remover scripts y event handlers inline
+      var sanitizedHTML = pluginDef.html.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, "");
+      sanitizedHTML = sanitizedHTML.replace(/\s(on\w+)\s*=\s*["'][^"']*["']/gi, "");
+      wrapper.innerHTML = sanitizedHTML;
+      document.getElementById("mainContent").appendChild(wrapper);
+    }
+    // Inicializar schema
+    if (pluginDef.schema) {
+      var db = erp.getDB();
+      var schemaKeys = Object.keys(pluginDef.schema);
+      for (var k = 0; k < schemaKeys.length; k++) {
+        var key = schemaKeys[k];
+        if (!db[key]) db[key] = pluginDef.schema[key];
+      }
+      erp.saveLocal(db);
+    }
+    // Agregar al menu
+    if (pluginDef.menu) {
+      agregarMenuPlugin(pluginDef.id, pluginDef.menu);
+    }
+    // Ejecutar init
+    if (pluginDef.init && typeof pluginDef.init === "function") {
+      try { pluginDef.init(erp); } catch(e) { console.error("ERP: Error init " + pluginDef.id, e); }
+    }
+    console.log("ERP: Plugin registrado - " + pluginDef.id);
+    return true;
+  },
+
+  checkPermiso: function(modulo, accion) {
+    var db = erp.getDB();
+    var usuarios = db.usuarios || [];
+    var usuarioActual = usuarios.find(function(u) { return u.estado === "Activo"; }) || usuarios[0];
+    if (!usuarioActual) return false;
+    var roles = db.roles || [];
+    var rol = roles.find(function(r) { return r.nombre === usuarioActual.rol || r.id === usuarioActual.rol; });
+    if (!rol) return false;
+    if (rol.permisos["*"] && rol.permisos["*"].indexOf(accion) >= 0) return true;
+    if (rol.permisos[modulo] && rol.permisos[modulo].indexOf(accion) >= 0) return true;
+    return false;
+  },
+
+  unregisterPlugin: function(pluginId) {
+    var styleId = "erp-css-" + pluginId;
+    var style = document.getElementById(styleId);
+    if (style) style.remove();
+    var modId = "mod-" + pluginId.toLowerCase().replace(/\./g, "-");
+    var mod = document.getElementById(modId);
+    if (mod) mod.remove();
+    var pageName = pluginId.toLowerCase().replace(/\./g, "-");
+    var navItem = document.querySelector('.nav-item[data-page="' + pageName + '"]');
+    if (navItem) navItem.remove();
+    delete plugins[pluginId];
+    console.log("ERP: Plugin removido - " + pluginId);
+  }
+};
+
+function getDB() { return erp.getDB(); }
+function saveLocal(db) { erp.saveLocal(db); }
+
+// EXPONER erp GLOBALMENTE para plugins
+window.erp = erp;
+
+function formatearMoneda(monto, moneda) {
+  var simbolos = {VES: "Bs.", USD: "$", EUR: "€"};
+  var simbolo = simbolos[moneda] || moneda;
+  var num = parseFloat(monto) || 0;
+  return simbolo + " " + num.toLocaleString("es-VE", {
+    minimumFractionDigits: config.decimales,
+    maximumFractionDigits: config.decimales
+  });
+}
+
+function obtenerTasa(desde, hasta, fecha) {
+  var db = getDB();
+  var tasas = db.tasasCambio || [];
+  if (fecha) {
+    tasas = tasas.filter(function(t) { return t.fecha <= fecha; });
+  }
+  tasas.sort(function(a, b) {
+    return new Date(b.fecha).getTime() - new Date(a.fecha).getTime();
+  });
+  var tasa = tasas.find(function(t) { return t.activa; }) || tasas[0];
+  if (!tasa) return null;
+  if (desde === hasta) return {factor: 1, tasa: tasa};
+  if (desde === "VES" && hasta === "USD") return {factor: tasa.ves_a_usd, tasa: tasa};
+  if (desde === "VES" && hasta === "EUR") return {factor: tasa.ves_a_eur, tasa: tasa};
+  if (desde === "USD" && hasta === "VES") return {factor: 1 / tasa.ves_a_usd, tasa: tasa};
+  if (desde === "EUR" && hasta === "VES") return {factor: 1 / tasa.ves_a_eur, tasa: tasa};
+  if (desde === "USD" && hasta === "EUR") return {factor: tasa.usd_a_eur, tasa: tasa};
+  if (desde === "EUR" && hasta === "USD") return {factor: 1 / tasa.usd_a_eur, tasa: tasa};
+  return {factor: 1, tasa: tasa};
+}
+
+function convertirMoneda(monto, desde, hasta, fecha) {
+  var res = obtenerTasa(desde, hasta, fecha);
+  if (!res) return {monto: monto, factor: 1, tasa: null};
+  return {monto: monto * res.factor, factor: res.factor, tasa: res.tasa};
+}
+
+// UI Basica
+function showLoading(show, text) {
+  var el = document.getElementById("loadingOverlay");
+  var txt = document.getElementById("loadingText");
+  if (txt) txt.textContent = text || "Cargando...";
+  if (el) el.classList.toggle("active", show);
+}
+
+function setLoadingProgress(pct) {
+  var bar = document.getElementById("loadingBar");
+  var fill = document.getElementById("loadingBarFill");
+  if (bar) bar.style.display = "block";
+  if (fill) fill.style.width = pct + "%";
+}
+
+function _showToastImpl(type, title, msg) {
+  var container = document.getElementById("toastContainer");
+  var icons = {
+    success: "<i class='fas fa-check-circle'></i>",
+    error: "<i class='fas fa-times-circle'></i>",
+    warning: "<i class='fas fa-exclamation-triangle'></i>",
+    info: "<i class='fas fa-info-circle'></i>"
+  };
+  var toast = document.createElement("div");
+  toast.className = "toast " + type;
+  toast.innerHTML = '<span class="toast-icon">' + icons[type] + '</span>' +
+    '<div class="toast-content"><div class="toast-title">' + title + '</div><div class="toast-msg">' + msg + '</div></div>';
+  container.appendChild(toast);
+  setTimeout(function() {
+    toast.style.opacity = "0";
+    toast.style.transform = "translateX(100%)";
+    setTimeout(function() { toast.remove(); }, 300);
+  }, 4000);
+}
+
+function showConfirm(title, body, onConfirm) {
+  modalQueue.push({title: title, body: body, onConfirm: onConfirm});
+  processModalQueue();
+}
+
+function processModalQueue() {
+  if (modalActive || modalQueue.length === 0) return;
+  var next = modalQueue.shift();
+  modalActive = true;
+  document.getElementById("confirmTitle").textContent = next.title;
+  document.getElementById("confirmBody").textContent = next.body;
+  document.getElementById("confirmModal").classList.add("active");
+  document.getElementById("confirmBtn").onclick = function() {
+    closeModal();
+    next.onConfirm();
+  };
+}
+
+function closeModal() {
+  document.getElementById("confirmModal").classList.remove("active");
+  modalActive = false;
+  setTimeout(processModalQueue, 150);
+}
+
+function closeUpdateModal() {
+  document.getElementById("updateModal").classList.remove("active");
+}
+
+// Navegacion
+function showModule(moduleName) {
+  var modules = document.querySelectorAll(".module-content");
+  for (var i = 0; i < modules.length; i++) modules[i].style.display = "none";
+  var navItems = document.querySelectorAll(".nav-item");
+  for (var i = 0; i < navItems.length; i++) navItems[i].classList.remove("active");
+  var targetId = "mod-" + moduleName;
+  var target = document.getElementById(targetId);
+  if (target) target.style.display = "block";
+  var nav = document.querySelector('.nav-item[data-page="' + moduleName + '"]');
+  if (nav) nav.classList.add("active");
+  document.getElementById("pageTitle").textContent = moduleName.charAt(0).toUpperCase() + moduleName.slice(1);
+  if (moduleName === "respaldo") renderSnapshots();
+  if (moduleName === "config") loadConfigUI();
+  if (moduleName === "updates") renderUpdatesPanel();
+  if (moduleName === "plugins") renderPluginsPanel();
+  var pluginId = Object.keys(plugins).find(function(pid) {
+    return pid.toLowerCase().replace(/\./g, "-") === moduleName;
+  });
+  if (pluginId && plugins[pluginId].onShow && typeof plugins[pluginId].onShow === "function") {
+    try { plugins[pluginId].onShow(erp); } catch(e) {}
+  }
+  if (window.innerWidth <= 768) document.getElementById("sidebar").classList.remove("open");
+}
+
+function toggleSidebar() {
+  var sb = document.getElementById("sidebar");
+  var tb = document.getElementById("topbar");
+  var mc = document.getElementById("mainContent");
+  if (window.innerWidth <= 768) {
+    sb.classList.toggle("open");
+  } else {
+    sb.classList.toggle("collapsed");
+    tb.classList.toggle("expanded");
+    mc.classList.toggle("expanded");
+  }
+}
+
+function updateClock() {
+  document.getElementById("clock").textContent = new Date().toLocaleTimeString("es-VE");
+}
+
+function agregarMenuPlugin(pluginId, menu) {
+  var container = document.getElementById("navPluginsContainer");
+  var pageName = pluginId.toLowerCase().replace(/\./g, "-");
+  var existente = document.querySelector('.nav-item[data-page="' + pageName + '"]');
+  if (existente) existente.remove();
+  var navItem = document.createElement("div");
+  navItem.className = "nav-item";
+  navItem.setAttribute("data-page", pageName);
+  navItem.onclick = function() { showModule(pageName); };
+  navItem.innerHTML = '<span class="icon"><i class="' + (menu.icono || "fas fa-puzzle-piece") + '"></i></span>' +
+    '<span class="label">' + (menu.label || pluginId) + '</span>' +
+    '<span class="phase-badge">' + (menu.badge || "P") + '</span>';
+  container.appendChild(navItem);
+}
+
+// Dashboard
+function updateKPIs() {
+  var db = getDB();
+  var ventas = db.ventasMensuales || [];
+  var totalVentas = ventas.length > 0 ? ventas[ventas.length - 1].ves : 0;
+  document.getElementById("kpiVentas").textContent = formatearMoneda(totalVentas, "VES");
+  document.getElementById("kpiPlugins").textContent = Object.keys(plugins).length;
+  document.getElementById("kpiStockBajo").textContent = "0";
+  document.getElementById("kpiVersion").textContent = ERP_VERSION;
+}
+
+function initChart() {
+  var db = getDB();
+  var ctx = document.getElementById("chartVentas");
+  if (!ctx) return;
+  if (chartInstance) chartInstance.destroy();
+  var ventas = db.ventasMensuales || [];
+  chartInstance = new Chart(ctx, {
+    type: "line",
+    data: {
+      labels: ventas.map(function(v) { return v.mes; }),
+      datasets: [{
+        label: "VES",
+        data: ventas.map(function(v) { return v.ves; }),
+        borderColor: "#3b82f6",
+        backgroundColor: "rgba(59,130,246,0.1)",
+        fill: true,
+        tension: 0.4,
+        pointRadius: 4
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { labels: { color: "#94a3b8" } } },
+      scales: {
+        x: { ticks: { color: "#94a3b8" }, grid: { color: "rgba(255,255,255,0.05)" } },
+        y: { ticks: { color: "#94a3b8" }, grid: { color: "rgba(255,255,255,0.05)" } }
+      }
+    }
+  });
+}
+
+function renderPhaseList() {
+  var list = document.getElementById("phaseList");
+  if (!list) return;
+  var FASES = [
+    {num:1, nombre:"Setup Base", estado:"done"},
+    {num:2, nombre:"Almacen / Kardex", estado:"wait"},
+    {num:3, nombre:"Compras", estado:"wait"},
+    {num:4, nombre:"Formulaciones", estado:"wait"},
+    {num:5, nombre:"Produccion", estado:"wait"},
+    {num:6, nombre:"Control de Calidad", estado:"wait"},
+    {num:7, nombre:"Lotes / Trazabilidad", estado:"wait"},
+    {num:8, nombre:"Multi-Moneda", estado:"wait"},
+    {num:9, nombre:"Cotizaciones / Clientes", estado:"wait"},
+    {num:10, nombre:"Ordenes Venta", estado:"wait"},
+    {num:11, nombre:"Facturacion + CxC", estado:"wait"},
+    {num:12, nombre:"Notas C/D + IGTF", estado:"wait"},
+    {num:13, nombre:"Costos", estado:"wait"},
+    {num:14, nombre:"MRP", estado:"wait"},
+    {num:15, nombre:"Nomina", estado:"wait"},
+    {num:16, nombre:"Provisiones", estado:"wait"},
+    {num:17, nombre:"Dashboards + Reportes", estado:"wait"},
+    {num:18, nombre:"Reportes Fiscales", estado:"wait"},
+    {num:19, nombre:"Seguridad + Auditoria", estado:"wait"},
+    {num:20, nombre:"Respaldo + Final", estado:"wait"}
+  ];
+  list.innerHTML = FASES.map(function(f) {
+    var cls = f.estado === "done" ? "completed" : (f.estado === "work" ? "active" : "pending");
+    var stCls = f.estado === "done" ? "done" : (f.estado === "work" ? "work" : "wait");
+    var stText = f.estado === "done" ? "Completada" : (f.estado === "work" ? "En Progreso" : "Pendiente");
+    return '<div class="phase-row ' + cls + '">' +
+      '<div class="phase-num">' + f.num + '</div>' +
+      '<span class="phase-name">' + f.nombre + '</span>' +
+      '<span class="phase-status ' + stCls + '">' + stText + '</span>' +
+    '</div>';
+  }).join("");
+}
+
+// Configuracion
+function loadConfigUI() {
+  var db = getDB();
+  var cfg = db.config || {};
+  document.getElementById("cfgEmpresa").value = cfg.empresa || config.empresa;
+  document.getElementById("cfgRIF").value = cfg.rif || config.rif;
+  document.getElementById("cfgDireccion").value = cfg.direccion || config.direccion;
+  document.getElementById("cfgMonedaBase").value = cfg.monedaBase || config.monedaBase;
+  document.getElementById("cfgIVA").value = cfg.iva || config.iva;
+  document.getElementById("cfgDecimales").value = cfg.decimales || config.decimales;
+  document.getElementById("cfgFormatoFecha").value = cfg.formatoFecha || config.formatoFecha;
+  document.getElementById("cfgCatalogoURL").value = cfg.catalogoURL || "";
+  document.getElementById("cfgCheckInterval").value = cfg.checkInterval || 0;
+}
+
+function saveConfig() {
+  var db = getDB();
+  db.config = db.config || {};
+  db.config.empresa = document.getElementById("cfgEmpresa").value;
+  db.config.rif = document.getElementById("cfgRIF").value;
+  db.config.direccion = document.getElementById("cfgDireccion").value;
+  db.config.monedaBase = document.getElementById("cfgMonedaBase").value;
+  db.config.iva = parseFloat(document.getElementById("cfgIVA").value) || 16;
+  db.config.decimales = parseInt(document.getElementById("cfgDecimales").value) || 2;
+  db.config.formatoFecha = document.getElementById("cfgFormatoFecha").value;
+  saveLocal(db);
+  _showToastImpl("success", "Config Guardada", "Parametros actualizados");
+}
+
+function saveUpdateConfig() {
+  var db = getDB();
+  db.config = db.config || {};
+  db.config.catalogoURL = document.getElementById("cfgCatalogoURL").value.trim();
+  db.config.checkInterval = parseInt(document.getElementById("cfgCheckInterval").value) || 0;
+  saveLocal(db);
+  config.catalogoURL = db.config.catalogoURL;
+  config.checkInterval = db.config.checkInterval;
+  setupAutoCheck();
+  _showToastImpl("success", "Config Actualizacion", "URL e intervalo guardados");
+}
+
+function updateSystemStatus() {
+  var db = getDB();
+  var dataStr = JSON.stringify(db);
+  var sizeKB = (dataStr.length / 1024).toFixed(1);
+  var totalRegistros = 0;
+  var keys = Object.keys(db);
+  for (var i = 0; i < keys.length; i++) {
+    if (Array.isArray(db[keys[i]])) totalRegistros += db[keys[i]].length;
+  }
+  var elStatus = document.getElementById("sysStatus");
+  var elLastCheck = document.getElementById("sysLastCheck");
+  var elPlugins = document.getElementById("sysPlugins");
+  var elSize = document.getElementById("sysSize");
+  if (elStatus) elStatus.textContent = "Activo - Core " + ERP_VERSION;
+  if (elLastCheck) elLastCheck.textContent = db.config && db.config.lastCheck ? new Date(db.config.lastCheck).toLocaleString() : "Nunca";
+  if (elPlugins) elPlugins.textContent = (db.pluginsInstalled || []).length + " instalados";
+  if (elSize) elSize.textContent = sizeKB + " KB";
+}
+
+// Snapshots
+function createSnapshot() {
+  var db = getDB();
+  if (!db.snapshots) db.snapshots = [];
+  var snapshot = {
+    id: "SNAP_" + Date.now(),
+    fecha: new Date().toISOString(),
+    descripcion: "Snapshot manual - " + new Date().toLocaleString(),
+    version: ERP_VERSION,
+    size: JSON.stringify(db).length
+  };
+  try {
+    localStorage.setItem("erp_snap_" + snapshot.id, JSON.stringify(db));
+  } catch(e) {
+    _showToastImpl("error", "Error", "No hay espacio para snapshot. Limpia datos antiguos.");
+    return;
+  }
+  db.snapshots.unshift(snapshot);
+  if (db.snapshots.length > 10) {
+    var removed = db.snapshots.pop();
+    localStorage.removeItem("erp_snap_" + removed.id);
+  }
+  saveLocal(db);
+  renderSnapshots();
+  _showToastImpl("success", "Snapshot Creado", snapshot.descripcion);
+}
+
+function restoreSnapshot(snapshotId) {
+  var snapData = localStorage.getItem("erp_snap_" + snapshotId);
+  if (!snapData) { _showToastImpl("error", "Error", "Snapshot no encontrado"); return; }
+  createSnapshot();
+  var db = JSON.parse(snapData);
+  db.ultimaModificacion = new Date().toISOString();
+  saveLocal(db);
+  updateKPIs();
+  initChart();
+  renderSnapshots();
+  _showToastImpl("success", "Rollback OK", "Sistema restaurado");
+}
+
+function deleteSnapshot(snapshotId) {
+  var db = getDB();
+  db.snapshots = (db.snapshots || []).filter(function(s) { return s.id !== snapshotId; });
+  localStorage.removeItem("erp_snap_" + snapshotId);
+  saveLocal(db);
+  renderSnapshots();
+}
+
+function renderSnapshots() {
+  var db = getDB();
+  var list = document.getElementById("snapshotList");
+  var snaps = db.snapshots || [];
+  if (snaps.length === 0) {
+    list.innerHTML = '<div style="color:#94a3b8;font-size:13px;text-align:center;padding:20px">No hay snapshots</div>';
+    return;
+  }
+  list.innerHTML = snaps.map(function(s) {
+    var fecha = new Date(s.fecha).toLocaleString();
+    var sizeKB = (s.size / 1024).toFixed(1);
+    return '<div class="snapshot-row">' +
+      '<span class="snapshot-date">' + fecha + '</span>' +
+      '<span class="snapshot-desc">' + s.descripcion + ' (' + sizeKB + ' KB)</span>' +
+      '<div class="snapshot-actions">' +
+        '<button class="btn btn-primary btn-sm" onclick="restoreSnapshot(&quot;' + s.id + '&quot;)"><i class="fas fa-undo"></i></button>' +
+        '<button class="btn btn-danger btn-sm" onclick="deleteSnapshot(&quot;' + s.id + '&quot;)"><i class="fas fa-trash"></i></button>' +
+      '</div>' +
+    '</div>';
+  }).join("");
+}
+
+function exportFullJSON() {
+  var db = getDB();
+  var dataStr = JSON.stringify(db, null, 2);
+  var blob = new Blob([dataStr], {type: "application/json"});
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement("a");
+  a.href = url;
+  a.download = "ERP_v3_Backup_" + new Date().toISOString().split("T")[0] + ".json";
+  a.click();
+  URL.revokeObjectURL(url);
+  _showToastImpl("success", "Export OK", "Backup descargado");
+}
+
+function handleImport(event) {
+  var file = event.target.files[0];
+  if (!file) return;
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      var db = JSON.parse(e.target.result);
+      createSnapshot();
+      db.ultimaModificacion = new Date().toISOString();
+      saveLocal(db);
+      updateKPIs();
+      initChart();
+      renderSnapshots();
+      _showToastImpl("success", "Import OK", "Datos importados");
+    } catch(err) {
+      _showToastImpl("error", "Error", err.message);
+    }
+  };
+  reader.readAsText(file);
+  event.target.value = "";
+}
+
+function resetAllData() {
+  showConfirm("Resetear Todo", "Esto borrara TODOS los datos. No se puede deshacer.", function() {
+    createSnapshot();
+    localStorage.removeItem("erp_data_v3");
+    for (var key in localStorage) {
+      if (key.indexOf("erp_snap_") === 0) localStorage.removeItem(key);
+      if (key.indexOf("erp_plugin_") === 0) localStorage.removeItem(key);
+    }
+    var db = getEmptyDB();
+    saveLocal(db);
+    plugins = {};
+    document.getElementById("navPluginsContainer").innerHTML = "";
+    updateKPIs();
+    initChart();
+    renderSnapshots();
+    _showToastImpl("success", "Reset OK", "Sistema reiniciado");
+  });
+}
+
+function initDemoData() {
+  createSnapshot();
+  var db = getDB();
+  db.materiasPrimas = [
+    {id:"MP001", codigo:"MP001", nombre:"Hidroxido de Sodio", unidad:"kg", stock:850, stockMin:200, costoUnitario:2.5, monedaCostoBase:"USD", categoria:"Bases"},
+    {id:"MP002", codigo:"MP002", nombre:"Acido Clorhidrico", unidad:"L", stock:420, stockMin:100, costoUnitario:1.8, monedaCostoBase:"USD", categoria:"Acidos"}
+  ];
+  db.clientes = [
+    {id:"CLI001", codigo:"CLI001", nombre:"Supermercados Metro", rif:"J-12345678-9", tipo:"Mayorista", estado:"Activo", creditoVES:50000, creditoUSD:85, creditoEUR:78, plazoCredito:30}
+  ];
+  db.ventasMensuales = [
+    {mes:"Ene", ves:1250000, usd:22600, eur:20700},
+    {mes:"Feb", ves:1380000, usd:24900, eur:22800},
+    {mes:"Mar", ves:1520000, usd:27400, eur:25100},
+    {mes:"Abr", ves:1450000, usd:26100, eur:23900},
+    {mes:"May", ves:1680000, usd:30300, eur:27700},
+    {mes:"Jun", ves:1820000, usd:32800, eur:30000}
+  ];
+  saveLocal(db);
+  updateKPIs();
+  initChart();
+  _showToastImpl("success", "Demo OK", "Datos de demostracion cargados");
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// SISTEMA DE AUTO-UPDATE v3.0
+// Consulta catalogo remoto, detecta nuevas versiones, muestra modal, instala
+// ═══════════════════════════════════════════════════════════════════════════════
+
+function setupAutoCheck() {
+  if (checkIntervalId) {
+    clearInterval(checkIntervalId);
+    checkIntervalId = null;
+  }
+  var db = getDB();
+  var interval = db.config && db.config.checkInterval ? db.config.checkInterval : 0;
+  if (interval > 0) {
+    checkIntervalId = setInterval(function() {
+      checkForUpdates(false);
+    }, interval);
+    console.log("Auto-check activado cada " + (interval / 60000) + " minutos");
+  }
+}
+
+async function checkForUpdates(mostrarToast) {
+  var db = getDB();
+  var url = db.config && db.config.catalogoURL ? db.config.catalogoURL : "";
+  if (!url) {
+    if (mostrarToast) _showToastImpl("warning", "Sin Catalogo", "Configura la URL del catalogo en Configuracion");
+    return;
+  }
+
+  showLoading(true, "Verificando actualizaciones...");
+  try {
+    // Agregar timestamp para evitar cache
+    var fetchUrl = url + (url.indexOf("?") > 0 ? "&" : "?") + "_t=" + Date.now();
+    var response = await fetch(fetchUrl, {
+      method: "GET",
+      headers: {"Accept": "application/json"}
+    });
+
+    if (!response.ok) {
+      throw new Error("HTTP " + response.status + ": " + response.statusText);
+    }
+
+    var catalogo = await response.json();
+    catalogoRemoto = catalogo.plugins || catalogo || [];
+
+    // Guardar en DB
+    db.config.lastCheck = new Date().toISOString();
+    saveLocal(db);
+
+    // Detectar updates
+    updatesDisponibles = [];
+    var instalados = db.pluginsInstalled || [];
+
+    for (var i = 0; i < catalogoRemoto.length; i++) {
+      var plugin = catalogoRemoto[i];
+      var local = instalados.find(function(p) { return p.id === plugin.id; });
+      if (!local) {
+        // Nuevo plugin no instalado
+        updatesDisponibles.push({
+          id: plugin.id,
+          nombre: plugin.nombre || plugin.id,
+          version: plugin.version || "1.0.0",
+          versionLocal: null,
+          tipo: "nuevo",
+          descripcion: plugin.descripcion || "",
+          url: plugin.url || "",
+          size: plugin.size || 0,
+          autor: plugin.autor || "Desconocido",
+          fecha: plugin.fecha || "",
+          dependencias: plugin.dependencias || []
+        });
+      } else if (compareVersions(plugin.version, local.version) > 0) {
+        // Update disponible
+        updatesDisponibles.push({
+          id: plugin.id,
+          nombre: plugin.nombre || plugin.id,
+          version: plugin.version,
+          versionLocal: local.version,
+          tipo: "actualizacion",
+          descripcion: plugin.descripcion || "",
+          url: plugin.url || "",
+          size: plugin.size || 0,
+          autor: plugin.autor || "Desconocido",
+          fecha: plugin.fecha || "",
+          dependencias: plugin.dependencias || []
+        });
+      }
+    }
+
+    // Actualizar UI
+    updateUpdateBadge();
+    renderUpdatesPanel();
+
+    if (mostrarToast) {
+      if (updatesDisponibles.length > 0) {
+        _showToastImpl("info", updatesDisponibles.length + " actualizacion(es)", "Hay nuevas funciones disponibles");
+        showUpdateModal();
+      } else {
+        _showToastImpl("success", "Sistema Actualizado", "No hay actualizaciones pendientes");
+      }
+    } else if (updatesDisponibles.length > 0) {
+      // Auto-check encontro algo - mostrar notificacion sutil
+      _showToastImpl("info", "Nueva actualizacion", updatesDisponibles.length + " plugin(s) disponible(s). Ve a Actualizaciones.");
+    }
+
+  } catch(err) {
+    console.error("Check updates error:", err);
+    if (mostrarToast) _showToastImpl("error", "Error", "No se pudo verificar: " + err.message);
+  } finally {
+    showLoading(false);
+  }
+}
+
+function compareVersions(v1, v2) {
+  if (!v1) return -1;
+  if (!v2) return 1;
+  var parts1 = v1.split(".").map(function(n) { return parseInt(n) || 0; });
+  var parts2 = v2.split(".").map(function(n) { return parseInt(n) || 0; });
+  var maxLen = Math.max(parts1.length, parts2.length);
+  for (var i = 0; i < maxLen; i++) {
+    var a = parts1[i] || 0;
+    var b = parts2[i] || 0;
+    if (a > b) return 1;
+    if (a < b) return -1;
+  }
+  return 0;
+}
+
+function updateUpdateBadge() {
+  var badge = document.getElementById("updatesBadge");
+  var dot = document.getElementById("updatesDot");
+  var statusText = document.getElementById("updateStatusText");
+  if (updatesDisponibles.length > 0) {
+    if (badge) { badge.textContent = updatesDisponibles.length; badge.style.display = "inline-block"; }
+    if (dot) dot.style.display = "block";
+    if (statusText) statusText.textContent = updatesDisponibles.length + " update(s)";
+  } else {
+    if (badge) badge.style.display = "none";
+    if (dot) dot.style.display = "none";
+    if (statusText) statusText.textContent = "Sin updates";
+  }
+}
+
+function showUpdateModal() {
+  var body = document.getElementById("updateModalBody");
+  if (!body) return;
+
+  if (updatesDisponibles.length === 0) {
+    body.innerHTML = '<div style="text-align:center;padding:20px;color:#94a3b8"><i class="fas fa-check-circle" style="font-size:48px;color:#10b981;margin-bottom:16px;display:block"></i>Sistema actualizado. No hay actualizaciones disponibles.</div>';
+  } else {
+    var html = '<div style="max-height:400px;overflow-y:auto">';
+    for (var i = 0; i < updatesDisponibles.length; i++) {
+      var u = updatesDisponibles[i];
+      var icono = u.tipo === "nuevo" ? "fa-plus-circle" : "fa-arrow-up";
+      var color = u.tipo === "nuevo" ? "#3b82f6" : "#f59e0b";
+      var tipoText = u.tipo === "nuevo" ? "NUEVO" : "ACTUALIZACION";
+      var versionText = u.versionLocal ? u.versionLocal + " \u2192 " + u.version : "v" + u.version;
+
+      html += '<div class="update-item">' +
+        '<div class="update-item-icon" style="background:rgba(59,130,246,0.15);color:' + color + '"><i class="fas ' + icono + '"></i></div>' +
+        '<div class="update-item-info">' +
+          '<div class="update-item-title">' + u.nombre + ' <span style="font-size:11px;color:' + color + '">' + tipoText + '</span></div>' +
+          '<div class="update-item-desc">' + (u.descripcion || "Sin descripcion") + '</div>' +
+          '<div class="update-item-version">' + versionText + ' | ' + u.autor + ' | ' + (u.size > 0 ? (u.size / 1024).toFixed(1) + " KB" : "Tamaño desconocido") + '</div>' +
+        '</div>' +
+        '<label style="display:flex;align-items:center;gap:8px;cursor:pointer">' +
+          '<input type="checkbox" class="update-checkbox" data-id="' + u.id + '" checked style="width:18px;height:18px;accent-color:#3b82f6">' +
+        '</label>' +
+      '</div>';
+    }
+    html += '</div>';
+    body.innerHTML = html;
+  }
+
+  document.getElementById("updateModal").classList.add("active");
+}
+
+function closeUpdateModal() {
+  document.getElementById("updateModal").classList.remove("active");
+}
+
+async function installSelectedUpdates() {
+  var checkboxes = document.querySelectorAll(".update-checkbox:checked");
+  var ids = [];
+  for (var i = 0; i < checkboxes.length; i++) {
+    ids.push(checkboxes[i].getAttribute("data-id"));
+  }
+  if (ids.length === 0) {
+    _showToastImpl("warning", "Nada seleccionado", "Selecciona al menos una actualizacion");
+    return;
+  }
+
+  closeUpdateModal();
+  showLoading(true, "Descargando " + ids.length + " actualizacion(es)...");
+
+  var exitosos = 0;
+  var fallidos = 0;
+
+  for (var i = 0; i < ids.length; i++) {
+    var update = updatesDisponibles.find(function(u) { return u.id === ids[i]; });
+    if (!update) continue;
+
+    setLoadingProgress(Math.round(((i + 1) / ids.length) * 100));
+
+    try {
+      var ok = await installPluginFromURL(update);
+      if (ok) exitosos++;
+      else fallidos++;
+    } catch(e) {
+      console.error("Error instalando " + update.id, e);
+      fallidos++;
+    }
+  }
+
+  setLoadingProgress(0);
+  showLoading(false);
+
+  // Refrescar lista
+  await checkForUpdates(false);
+
+  if (exitosos > 0) {
+    _showToastImpl("success", "Instalacion Completa", exitosos + " plugin(s) instalado(s)" + (fallidos > 0 ? ", " + fallidos + " fallo(s)" : ""));
+  } else {
+    _showToastImpl("error", "Instalacion Fallida", "Ningun plugin pudo instalarse");
+  }
+}
+
+async function installAllUpdates() {
+  if (updatesDisponibles.length === 0) {
+    _showToastImpl("info", "Sin updates", "No hay actualizaciones pendientes");
+    return;
+  }
+  showUpdateModal();
+}
+
+async function installPluginFromURL(updateInfo) {
+  if (!updateInfo.url) {
+    _showToastImpl("error", "Error", "URL no disponible para " + updateInfo.id);
+    return false;
+  }
+
+  try {
+    var response = await fetch(updateInfo.url + "?_t=" + Date.now());
+    if (!response.ok) throw new Error("HTTP " + response.status);
+
+    var pluginCode = await response.text();
+
+    if (pluginCode.indexOf("erp.registerPlugin") === -1) {
+      throw new Error("El archivo no parece ser un plugin ERP valido");
+    }
+
+    var peligrosos = [
+      {patron: /eval\s*\(/, desc: "eval()"},
+      {patron: /Function\s*\(/, desc: "Function()"},
+      {patron: /document\.write/, desc: "document.write"},
+      {patron: /localStorage\.clear\s*\(/, desc: "localStorage.clear()"}
+    ];
+    for (var i = 0; i < peligrosos.length; i++) {
+      if (peligrosos[i].patron.test(pluginCode)) {
+        throw new Error("Codigo no permitido: " + peligrosos[i].desc);
+      }
+    }
+
+    createSnapshot();
+
+    var blob = new Blob([pluginCode], {type: "application/javascript"});
+    var blobUrl = URL.createObjectURL(blob);
+
+    await new Promise(function(resolve, reject) {
+      var script = document.createElement("script");
+      script.src = blobUrl;
+      script.type = "text/javascript";
+      script.onload = function() {
+        URL.revokeObjectURL(blobUrl);
+        resolve(true);
+      };
+      script.onerror = function() {
+        URL.revokeObjectURL(blobUrl);
+        reject(new Error("Error cargando script"));
+      };
+      document.head.appendChild(script);
+    });
+
+    if (!plugins[updateInfo.id]) {
+      throw new Error("El plugin no se registro. Verifica que llame a erp.registerPlugin().");
+    }
+
+    var db = getDB();
+    if (!db.pluginsInstalled) db.pluginsInstalled = [];
+
+    var idx = db.pluginsInstalled.findIndex(function(p) { return p.id === updateInfo.id; });
+    var registro = {
+      id: updateInfo.id,
+      nombre: updateInfo.nombre,
+      version: updateInfo.version,
+      fechaInstalacion: new Date().toISOString(),
+      url: updateInfo.url,
+      autor: updateInfo.autor
+    };
+
+    if (idx >= 0) db.pluginsInstalled[idx] = registro;
+    else db.pluginsInstalled.push(registro);
+
+    if (!db.pluginsHistory) db.pluginsHistory = [];
+    db.pluginsHistory.unshift({
+      id: updateInfo.id,
+      nombre: updateInfo.nombre,
+      version: updateInfo.version,
+      tipo: updateInfo.tipo,
+      fecha: new Date().toISOString()
+    });
+    if (db.pluginsHistory.length > 50) db.pluginsHistory.pop();
+
+    localStorage.setItem("erp_plugin_code_" + updateInfo.id, pluginCode);
+    saveLocal(db);
+    console.log("Plugin instalado:", updateInfo.id, "v" + updateInfo.version);
+    return true;
+
+  } catch(err) {
+    console.error("Error instalando plugin:", err);
+    _showToastImpl("error", "Error en " + updateInfo.id, err.message);
+    return false;
+  }
+}
+
+function renderUpdatesPanel() {
+  var container = document.getElementById("updatesContainer");
+  if (!container) return;
+
+  if (updatesDisponibles.length === 0) {
+    container.innerHTML = '<div style="color:#94a3b8;text-align:center;padding:40px"><i class="fas fa-check-circle" style="font-size:48px;margin-bottom:16px;display:block;color:#10b981"></i>Sistema actualizado. No hay actualizaciones pendientes.</div>';
+  } else {
+    var html = '<div style="display:flex;flex-direction:column;gap:8px">';
+    for (var i = 0; i < updatesDisponibles.length; i++) {
+      var u = updatesDisponibles[i];
+      var icono = u.tipo === "nuevo" ? "fa-plus-circle" : "fa-arrow-up";
+      var color = u.tipo === "nuevo" ? "#3b82f6" : "#f59e0b";
+      html += '<div class="update-item">' +
+        '<div class="update-item-icon" style="background:rgba(59,130,246,0.15);color:' + color + '"><i class="fas ' + icono + '"></i></div>' +
+        '<div class="update-item-info">' +
+          '<div class="update-item-title">' + u.nombre + '</div>' +
+          '<div class="update-item-desc">' + (u.descripcion || "") + '</div>' +
+          '<div class="update-item-version">' + (u.versionLocal ? u.versionLocal + " \u2192 " : "") + u.version + ' | ' + u.autor + '</div>' +
+        '</div>' +
+        '<button class="btn btn-primary btn-sm" onclick="installSingleUpdate(\'' + u.id + '\')"><i class="fas fa-download"></i> Instalar</button>' +
+      '</div>';
+    }
+    html += '</div>';
+    container.innerHTML = html;
+  }
+
+  // Historial
+  var db = getDB();
+  var history = db.pluginsHistory || [];
+  var histContainer = document.getElementById("updatesHistory");
+  if (histContainer) {
+    if (history.length === 0) {
+      histContainer.innerHTML = '<div style="color:#94a3b8;text-align:center;padding:20px">Sin historial</div>';
+    } else {
+      var hhtml = '<div style="display:flex;flex-direction:column;gap:6px">';
+      for (var i = 0; i < Math.min(history.length, 20); i++) {
+        var h = history[i];
+        hhtml += '<div class="snapshot-row">' +
+          '<span class="snapshot-date">' + new Date(h.fecha).toLocaleString() + '</span>' +
+          '<span class="snapshot-desc">' + h.nombre + ' ' + (h.tipo === "nuevo" ? "instalado" : "actualizado") + ' a v' + h.version + '</span>' +
+        '</div>';
+      }
+      hhtml += '</div>';
+      histContainer.innerHTML = hhtml;
+    }
+  }
+}
+
+async function installSingleUpdate(pluginId) {
+  var update = updatesDisponibles.find(function(u) { return u.id === pluginId; });
+  if (!update) return;
+
+  showLoading(true, "Instalando " + update.nombre + "...");
+  try {
+    var ok = await installPluginFromURL(update);
+    if (ok) {
+      await checkForUpdates(false);
+      _showToastImpl("success", "Instalado", update.nombre + " v" + update.version);
+    }
+  } finally {
+    showLoading(false);
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// PANEL DE PLUGINS + RE-HIDRATACION
+// ═══════════════════════════════════════════════════════════════════════════════
+
+function renderPluginsPanel() {
+  var container = document.getElementById("pluginsList");
+  if (!container) return;
+
+  var db = getDB();
+  var instalados = db.pluginsInstalled || [];
+
+  if (instalados.length === 0 && Object.keys(plugins).length === 0) {
+    container.innerHTML = '<div style="color:#94a3b8;text-align:center;padding:20px">No hay plugins instalados. Ve a Actualizaciones para instalar.</div>';
+    return;
+  }
+
+  var html = '<div style="display:flex;flex-direction:column;gap:8px">';
+  for (var i = 0; i < instalados.length; i++) {
+    var p = instalados[i];
+    var enMemoria = plugins[p.id] ? true : false;
+    html += '<div class="snapshot-row" style="flex-wrap:wrap">' +
+      '<div style="width:40px;height:40px;border-radius:8px;background:#3b82f6;display:flex;align-items:center;justify-content:center">' +
+        '<i class="fas fa-puzzle-piece" style="color:#fff"></i></div>' +
+      '<div style="flex:1;min-width:200px">' +
+        '<div style="font-weight:600;color:#f1f5f9">' + p.nombre + '</div>' +
+        '<div style="font-size:11px;color:#94a3b8">' + p.id + ' v' + p.version + ' | ' + new Date(p.fechaInstalacion).toLocaleDateString() + '</div>' +
+      '</div>' +
+      '<div style="text-align:right">' +
+        '<span class="badge ' + (enMemoria ? 'badge-success' : 'badge-danger') + '">' + (enMemoria ? 'Activo' : 'Inactivo') + '</span>' +
+        '<div style="margin-top:4px"><button class="btn btn-danger btn-sm" onclick="uninstallPlugin(\'' + p.id + '\')"><i class="fas fa-trash"></i> Desinstalar</button></div>' +
+      '</div>' +
+    '</div>';
+  }
+  html += '</div>';
+  container.innerHTML = html;
+}
+
+function uninstallPlugin(pluginId) {
+  showConfirm("Desinstalar Plugin", "Eliminar " + pluginId + "? Los datos del plugin se mantienen en la base de datos.", function() {
+    erp.unregisterPlugin(pluginId);
+
+    var db = getDB();
+    db.pluginsInstalled = (db.pluginsInstalled || []).filter(function(p) { return p.id !== pluginId; });
+    saveLocal(db);
+
+    localStorage.removeItem("erp_plugin_code_" + pluginId);
+
+    renderPluginsPanel();
+    _showToastImpl("info", "Desinstalado", pluginId + " removido");
+  });
+}
+
+function handlePluginFile(event) {
+  var file = event.target.files[0];
+  if (!file) return;
+
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      var code = e.target.result;
+      if (code.indexOf("erp.registerPlugin") === -1) {
+        _showToastImpl("error", "Archivo Invalido", "No es un plugin ERP valido");
+        return;
+      }
+
+      // Extraer ID - buscar string literal o variable PLUGIN_ID
+      var idMatch = code.match(/id\s*:\s*["']([^"']+)["']/);
+      var idMatch2 = code.match(/PLUGIN_ID\s*=\s*["']([^"']+)["']/);
+      var pluginId = idMatch ? idMatch[1] : (idMatch2 ? idMatch2[1] : null);
+
+      // Extraer version
+      var versionMatch = code.match(/version\s*:\s*["']([^"']+)["']/);
+      var versionMatch2 = code.match(/PLUGIN_VERSION\s*=\s*["']([^"']+)["']/);
+      var version = versionMatch ? versionMatch[1] : (versionMatch2 ? versionMatch2[1] : "1.0.0");
+
+      // Extraer nombre
+      var nombreMatch = code.match(/nombre\s*:\s*["']([^"']+)["']/);
+      var nombre = nombreMatch ? nombreMatch[1] : (pluginId || "Plugin");
+
+      if (!pluginId) {
+        _showToastImpl("error", "Error", "No se pudo detectar el ID del plugin");
+        return;
+      }
+
+      var peligrosos = [
+        {patron: /eval\s*\(/, desc: "eval()"},
+        {patron: /Function\s*\(/, desc: "Function()"},
+        {patron: /document\.write/, desc: "document.write"},
+        {patron: /localStorage\.clear\s*\(/, desc: "localStorage.clear()"}
+      ];
+      for (var i = 0; i < peligrosos.length; i++) {
+        if (peligrosos[i].patron.test(code)) {
+          _showToastImpl("error", "Plugin Bloqueado", "Contiene: " + peligrosos[i].desc);
+          return;
+        }
+      }
+
+      createSnapshot();
+
+      var blob = new Blob([code], {type: "application/javascript"});
+      var blobUrl = URL.createObjectURL(blob);
+      var script = document.createElement("script");
+      script.src = blobUrl;
+      script.type = "text/javascript";
+      script.onload = function() {
+        URL.revokeObjectURL(blobUrl);
+        // Dar tiempo al plugin para registrarse
+        setTimeout(function() {
+          if (!plugins[pluginId]) {
+            _showToastImpl("error", "Error", "El plugin no se registro. ID esperado: " + pluginId);
+            return;
+          }
+          var db = getDB();
+          if (!db.pluginsInstalled) db.pluginsInstalled = [];
+          var idx = db.pluginsInstalled.findIndex(function(p) { return p.id === pluginId; });
+          var registro = {
+            id: pluginId,
+            nombre: nombre,
+            version: version,
+            fechaInstalacion: new Date().toISOString(),
+            url: "local://" + file.name,
+            autor: "Local"
+          };
+          if (idx >= 0) db.pluginsInstalled[idx] = registro;
+          else db.pluginsInstalled.push(registro);
+          localStorage.setItem("erp_plugin_code_" + pluginId, code);
+          saveLocal(db);
+          renderPluginsPanel();
+          _showToastImpl("success", "Plugin Instalado", nombre + " v" + version);
+        }, 200);
+      };
+      script.onerror = function() {
+        URL.revokeObjectURL(blobUrl);
+        _showToastImpl("error", "Error", "No se pudo ejecutar el plugin");
+      };
+      document.head.appendChild(script);
+    } catch(err) {
+      _showToastImpl("error", "Error", err.message);
+    }
+  };
+  reader.readAsText(file);
+  event.target.value = "";
+}
+
+function rehydratePlugins() {
+  var db = getDB();
+  var instalados = db.pluginsInstalled || [];
+  var count = 0;
+  var fallidos = 0;
+  var fallidosList = [];
+
+  for (var i = 0; i < instalados.length; i++) {
+    (function(pluginInfo) {
+      var code = localStorage.getItem("erp_plugin_code_" + pluginInfo.id);
+      if (code) {
+        try {
+          var blob = new Blob([code], {type: "application/javascript"});
+          var blobUrl = URL.createObjectURL(blob);
+          var script = document.createElement("script");
+          script.src = blobUrl;
+          script.type = "text/javascript";
+          script.onload = function() { 
+            URL.revokeObjectURL(blobUrl); 
+            console.log("ERP: Plugin re-hidratado OK: " + pluginInfo.id);
+          };
+          script.onerror = function() {
+            URL.revokeObjectURL(blobUrl);
+            console.error("ERP: Error cargando plugin " + pluginInfo.id);
+            fallidos++;
+            fallidosList.push(pluginInfo.id);
+          };
+          document.head.appendChild(script);
+          count++;
+        } catch(e) {
+          console.error("ERP: Error re-hidratando " + pluginInfo.id, e);
+          fallidos++;
+          fallidosList.push(pluginInfo.id);
+        }
+      } else {
+        console.warn("ERP: Codigo no encontrado para " + pluginInfo.id);
+        fallidos++;
+        fallidosList.push(pluginInfo.id);
+      }
+    })(instalados[i]);
+  }
+
+  renderPluginsPanel();
+  if (count > 0) {
+    _showToastImpl("info", "Re-hidratacion", count + " plugin(s) restaurado(s)" + (fallidos > 0 ? ", " + fallidos + " fallo(s)" : ""));
+  }
+  if (fallidos > 0) {
+    console.warn("ERP: Plugins que fallaron re-hidratacion:", fallidosList.join(", "));
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// INICIALIZACION
+// ═══════════════════════════════════════════════════════════════════════════════
+
+function init() {
+  // Cargar DB o crear nueva
+  var db = getDB();
+
+  // Sincronizar config global con DB
+  if (db.config) {
+    config.monedaBase = db.config.monedaBase || config.monedaBase;
+    config.iva = db.config.iva || config.iva;
+    config.empresa = db.config.empresa || config.empresa;
+    config.rif = db.config.rif || config.rif;
+    config.direccion = db.config.direccion || config.direccion;
+    config.decimales = db.config.decimales || config.decimales;
+    config.formatoFecha = db.config.formatoFecha || config.formatoFecha;
+    config.catalogoURL = db.config.catalogoURL || "";
+    config.checkInterval = db.config.checkInterval || 0;
+  }
+
+  // Re-hidratar plugins instalados
+  rehydratePlugins();
+
+  // UI
+  loadConfigUI();
+  updateClock();
+  setInterval(updateClock, 1000);
+  renderPhaseList();
+  initChart();
+  updateKPIs();
+  updateSystemStatus();
+  updateUpdateBadge();
+
+  // Auto-check de actualizaciones
+  setupAutoCheck();
+
+  // Verificar updates al inicio (silencioso)
+  if (config.catalogoURL) {
+    setTimeout(function() {
+      checkForUpdates(false);
+    }, 3000);
+  }
+
+  console.log("ERP Core v3.0 iniciado. Plugins activos:", Object.keys(plugins).length);
+}
+
+window.addEventListener("DOMContentLoaded", init);
+window.addEventListener("resize", function() {
+  if (window.innerWidth > 768) {
+    document.getElementById("sidebar").classList.remove("open");
+  }
+});
+</script>
+</body>
+</html>
