@@ -234,6 +234,7 @@ body{font-family:'Inter',system-ui,sans-serif;background:#0f172a;color:#f1f5f9;m
 .data-table-wrapper { margin-top: 16px; }
 </style>
 <base target="_blank">
+<base target="_blank">
 </head>
 <body>
 
@@ -378,7 +379,7 @@ body{font-family:'Inter',system-ui,sans-serif;background:#0f172a;color:#f1f5f9;m
   </div>
   <div class="nav-section">
     <div class="nav-section-title">Sistema</div>
-    <div class="nav-item" data-page="updates" onclick="showModule(\'updates\')">
+    <div class="nav-item" data-page="updates" onclick="showModule('updates')">
       <span class="icon"><i class="fas fa-sync-alt"></i></span>
       <span class="label">Actualizaciones</span>
       <span class="phase-badge" id="updatesBadge" style="display:none">0</span>
@@ -5303,6 +5304,28 @@ window.agregarMenuPlugin = agregarMenuPlugin;
 function init() {
   // Cargar DB o crear nueva
   var db = getDB();
+  // Auto-registrar micro-fases Fase 1 (integradas en Core)
+  db.pluginsInstalled = db.pluginsInstalled || [];
+  var fase1Micros = [
+    {id: "FASE1_1", nombre: "Estructura HTML Base", version: "3.0.0", fechaInstalacion: new Date().toISOString(), url: "core://integrated", autor: "Core"},
+    {id: "FASE1_2", nombre: "Sidebar + Navegacion", version: "3.0.0", fechaInstalacion: new Date().toISOString(), url: "core://integrated", autor: "Core"},
+    {id: "FASE1_3", nombre: "Header + Usuario", version: "3.0.0", fechaInstalacion: new Date().toISOString(), url: "core://integrated", autor: "Core"},
+    {id: "FASE1_4", nombre: "Dashboard KPIs Basicos", version: "3.0.0", fechaInstalacion: new Date().toISOString(), url: "core://integrated", autor: "Core"},
+    {id: "FASE1_5", nombre: "Chart.js + Datos Demo + Config", version: "3.0.0", fechaInstalacion: new Date().toISOString(), url: "core://integrated", autor: "Core"},
+    {id: "FASE1_6", nombre: "Sistema de Plugins", version: "3.0.0", fechaInstalacion: new Date().toISOString(), url: "core://integrated", autor: "Core"},
+    {id: "FASE1_7", nombre: "Rollback Automatico", version: "3.0.0", fechaInstalacion: new Date().toISOString(), url: "core://integrated", autor: "Core"},
+    {id: "FASE1_8", nombre: "Versionado Schema + Migraciones", version: "3.0.0", fechaInstalacion: new Date().toISOString(), url: "core://integrated", autor: "Core"},
+    {id: "FASE1_9", nombre: "API Inyectada Estandar", version: "3.0.0", fechaInstalacion: new Date().toISOString(), url: "core://integrated", autor: "Core"},
+    {id: "FASE1_10", nombre: "Sincronizacion + Auto-Update", version: "3.0.0", fechaInstalacion: new Date().toISOString(), url: "core://integrated", autor: "Core"}
+  ];
+  for (var i = 0; i < fase1Micros.length; i++) {
+    var exists = db.pluginsInstalled.findIndex(function(p) { return p.id === fase1Micros[i].id; });
+    if (exists < 0) {
+      db.pluginsInstalled.push(fase1Micros[i]);
+    }
+  }
+  saveLocal(db);
+
 
   // Sincronizar config global con DB
   if (db.config) {
