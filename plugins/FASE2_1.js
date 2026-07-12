@@ -49,30 +49,30 @@
     if (!tbody) return;
 
     if (filtered.length === 0) {
-      tbody.innerHTML = "<tr><td colspan="10" style="text-align:center;color:#94a3b8;padding:20px">No hay materias primas registradas</td></tr>";
+      tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;color:#94a3b8;padding:20px">No hay materias primas registradas</td></tr>';
     } else {
       var html = "";
       for (var i = 0; i < filtered.length; i++) {
         var m = filtered[i];
         var stockClass = m.stock < m.stockMin ? "low" : "ok";
         var estado = m.stock < m.stockMin
-          ? "<span class="badge badge-danger">Bajo</span>"
-          : "<span class="badge badge-success">OK</span>";
-        html += "<tr>" +
-          "<td>" + (m.codigo || m.id) + "</td>" +
-          "<td><strong>" + m.nombre + "</strong></td>" +
-          "<td>" + (m.categoria || "-") + "</td>" +
-          "<td>" + (m.unidad || "-") + "</td>" +
-          "<td><span class="mp-stock " + stockClass + "">" + m.stock + "</span></td>" +
-          "<td>" + m.stockMin + "</td>" +
-          "<td>" + _erp.formatearMoneda(m.costoUnitario || 0, m.monedaCostoBase || "VES") + "</td>" +
-          "<td>" + (m.monedaCostoBase || "VES") + "</td>" +
-          "<td>" + estado + "</td>" +
-          "<td class="actions">" +
-            "<button class="btn btn-primary btn-sm" onclick="window.FASE2_1.editMaterial('" + m.id + "')"><i class="fas fa-edit"></i></button>" +
-            "<button class="btn btn-danger btn-sm" onclick="window.FASE2_1.deleteMaterial('" + m.id + "')"><i class="fas fa-trash"></i></button>" +
-          "</td>" +
-        "</tr>";
+          ? '<span class="badge badge-danger">Bajo</span>'
+          : '<span class="badge badge-success">OK</span>';
+        html += '<tr>' +
+          '<td>' + (m.codigo || m.id) + '</td>' +
+          '<td><strong>' + m.nombre + '</strong></td>' +
+          '<td>' + (m.categoria || "-") + '</td>' +
+          '<td>' + (m.unidad || "-") + '</td>' +
+          '<td><span class="mp-stock ' + stockClass + '">' + m.stock + '</span></td>' +
+          '<td>' + m.stockMin + '</td>' +
+          '<td>' + _erp.formatearMoneda(m.costoUnitario || 0, m.monedaCostoBase || "VES") + '</td>' +
+          '<td>' + (m.monedaCostoBase || "VES") + '</td>' +
+          '<td>' + estado + '</td>' +
+          '<td class="actions">' +
+            '<button class="btn btn-primary btn-sm" onclick="window.FASE2_1.editMaterial(\'' + m.id + '\')"><i class="fas fa-edit"></i></button>' +
+            '<button class="btn btn-danger btn-sm" onclick="window.FASE2_1.deleteMaterial(\'' + m.id + '\')"><i class="fas fa-trash"></i></button>' +
+          '</td>' +
+        '</tr>';
       }
       tbody.innerHTML = html;
     }
@@ -106,9 +106,9 @@
 
     if (filterCat) {
       var current = filterCat.value;
-      var html = "<option value="">Todas las categorias</option>";
+      var html = '<option value="">Todas las categorias</option>';
       for (var i = 0; i < cats.length; i++) {
-        html += "<option value="" + cats[i].nombre + "">" + cats[i].nombre + "</option>";
+        html += '<option value="' + cats[i].nombre + '">' + cats[i].nombre + '</option>';
       }
       filterCat.innerHTML = html;
       filterCat.value = current;
@@ -116,14 +116,14 @@
     if (inpCategoria) {
       var html = "";
       for (var i = 0; i < cats.length; i++) {
-        html += "<option value="" + cats[i].nombre + "">" + cats[i].nombre + "</option>";
+        html += '<option value="' + cats[i].nombre + '">' + cats[i].nombre + '</option>';
       }
       inpCategoria.innerHTML = html;
     }
     if (inpUnidad) {
       var html = "";
       for (var i = 0; i < unidades.length; i++) {
-        html += "<option value="" + unidades[i].nombre + "">" + unidades[i].nombre + " (" + unidades[i].simbolo + ")</option>";
+        html += '<option value="' + unidades[i].nombre + '">' + unidades[i].nombre + ' (' + unidades[i].simbolo + ')</option>';
       }
       inpUnidad.innerHTML = html;
     }
@@ -344,107 +344,86 @@
   }
 
   // ─── HTML DEL CONTENIDO (se inyecta en el slot del padre) ───
-  var CONTENT_HTML = "<div class="f21-wrapper">" +
-    "<div class="f21-kpi-grid">" +
-      "<div class="f21-kpi-card">" +
-        "<div class="f21-kpi-header"><span class="f21-kpi-title">Total Materiales</span><div class="f21-kpi-icon blue"><i class="fas fa-boxes"></i></div></div>" +
-        "<div class="f21-kpi-value" id="f21_totalMP">0</div>" +
-      "</div>" +
-      "<div class="f21-kpi-card">" +
-        "<div class="f21-kpi-header"><span class="f21-kpi-title">Stock Bajo</span><div class="f21-kpi-icon red"><i class="fas fa-exclamation-triangle"></i></div></div>" +
-        "<div class="f21-kpi-value" id="f21_stockBajo">0</div>" +
-      "</div>" +
-      "<div class="f21-kpi-card">" +
-        "<div class="f21-kpi-header"><span class="f21-kpi-title">Valor Inventario</span><div class="f21-kpi-icon green"><i class="fas fa-coins"></i></div></div>" +
-        "<div class="f21-kpi-value" id="f21_valorInv">Bs. 0,00</div>" +
-      "</div>" +
-    "</div>" +
-    "<div class="f21-search-bar">" +
-      "<input type="text" class="f21-search-input" id="f21_search" placeholder="Buscar por nombre o codigo...">" +
-      "<select class="f21-filter-select" id="f21_filterCat"><option value="">Todas las categorias</option></select>" +
-      "<select class="f21-filter-select" id="f21_filterStock"><option value="">Todos</option><option value="low">Stock Bajo</option><option value="ok">Stock OK</option></select>" +
-      "<button class="btn btn-primary" id="f21_btnExport"><i class="fas fa-file-csv"></i> Export CSV</button>" +
-    "</div>" +
-    "<div class="f21-table-wrapper">" +
-      "<table class="data-table" id="f21_table">" +
-        "<thead><tr><th>Codigo</th><th>Nombre</th><th>Categoria</th><th>Unidad</th><th>Stock</th><th>Stock Min</th><th>Costo Unit</th><th>Moneda</th><th>Estado</th><th>Acciones</th></tr></thead>" +
-        "<tbody id="f21_tbody"></tbody>" +
-      "</table>" +
-    "</div>" +
-  "</div>";
+  var CONTENT_HTML = '<div class="f21-wrapper">' +
+    '<div class="f21-kpi-grid">' +
+      '<div class="f21-kpi-card">' +
+        '<div class="f21-kpi-header"><span class="f21-kpi-title">Total Materiales</span><div class="f21-kpi-icon blue"><i class="fas fa-boxes"></i></div></div>' +
+        '<div class="f21-kpi-value" id="f21_totalMP">0</div>' +
+      '</div>' +
+      '<div class="f21-kpi-card">' +
+        '<div class="f21-kpi-header"><span class="f21-kpi-title">Stock Bajo</span><div class="f21-kpi-icon red"><i class="fas fa-exclamation-triangle"></i></div></div>' +
+        '<div class="f21-kpi-value" id="f21_stockBajo">0</div>' +
+      '</div>' +
+      '<div class="f21-kpi-card">' +
+        '<div class="f21-kpi-header"><span class="f21-kpi-title">Valor Inventario</span><div class="f21-kpi-icon green"><i class="fas fa-coins"></i></div></div>' +
+        '<div class="f21-kpi-value" id="f21_valorInv">Bs. 0,00</div>' +
+      '</div>' +
+    '</div>' +
+    '<div class="f21-search-bar">' +
+      '<input type="text" class="f21-search-input" id="f21_search" placeholder="Buscar por nombre o codigo...">' +
+      '<select class="f21-filter-select" id="f21_filterCat"><option value="">Todas las categorias</option></select>' +
+      '<select class="f21-filter-select" id="f21_filterStock"><option value="">Todos</option><option value="low">Stock Bajo</option><option value="ok">Stock OK</option></select>' +
+      '<button class="btn btn-primary" id="f21_btnExport"><i class="fas fa-file-csv"></i> Export CSV</button>' +
+    '</div>' +
+    '<div class="f21-table-wrapper">' +
+      '<table class="data-table" id="f21_table">' +
+        '<thead><tr><th>Codigo</th><th>Nombre</th><th>Categoria</th><th>Unidad</th><th>Stock</th><th>Stock Min</th><th>Costo Unit</th><th>Moneda</th><th>Estado</th><th>Acciones</th></tr></thead>' +
+        '<tbody id="f21_tbody"></tbody>' +
+      '</table>' +
+    '</div>' +
+  '</div>';
 
   // ─── HTML DEL MODAL (se inyecta en slot-modals del padre) ───
-  var MODAL_HTML = "<div class="modal-overlay" id="f21_modal" style="display:none;align-items:center;justify-content:center;">" +
-    "<div class="modal-content" style="background:#1e293b;border:1px solid #334155;border-radius:12px;width:100%;max-width:600px;max-height:90vh;overflow-y:auto;">" +
-      "<div class="modal-header" style="padding:20px;border-bottom:1px solid #334155;display:flex;align-items:center;justify-content:space-between;">" +
-        "<div class="modal-title" id="f21_modalTitle" style="font-size:16px;font-weight:600;color:#f1f5f9;">Agregar Material</div>" +
-        "<button id="f21_modalClose" style="width:32px;height:32px;border-radius:6px;background:#334155;border:none;color:#f1f5f9;cursor:pointer;font-size:18px;display:flex;align-items:center;justify-content:center;">&times;</button>" +
-      "</div>" +
-      "<div class="modal-body" style="padding:20px;">" +
-        "<div class="form-grid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;">" +
-          "<div class="form-group" style="display:flex;flex-direction:column;gap:6px;"><label style="font-size:12px;font-weight:500;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px;">Codigo</label><input type="text" id="f21_inpCodigo" placeholder="Ej: MP006" style="padding:10px 12px;border-radius:6px;border:1px solid #334155;background:#0f172a;color:#f1f5f9;font-size:13px;"></div>" +
-          "<div class="form-group" style="display:flex;flex-direction:column;gap:6px;"><label style="font-size:12px;font-weight:500;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px;">Nombre</label><input type="text" id="f21_inpNombre" placeholder="Nombre del material" style="padding:10px 12px;border-radius:6px;border:1px solid #334155;background:#0f172a;color:#f1f5f9;font-size:13px;"></div>" +
-          "<div class="form-group" style="display:flex;flex-direction:column;gap:6px;"><label style="font-size:12px;font-weight:500;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px;">Categoria</label><select id="f21_inpCategoria" style="padding:10px 12px;border-radius:6px;border:1px solid #334155;background:#0f172a;color:#f1f5f9;font-size:13px;"></select></div>" +
-          "<div class="form-group" style="display:flex;flex-direction:column;gap:6px;"><label style="font-size:12px;font-weight:500;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px;">Unidad</label><select id="f21_inpUnidad" style="padding:10px 12px;border-radius:6px;border:1px solid #334155;background:#0f172a;color:#f1f5f9;font-size:13px;"></select></div>" +
-          "<div class="form-group" style="display:flex;flex-direction:column;gap:6px;"><label style="font-size:12px;font-weight:500;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px;">Stock Inicial</label><input type="number" id="f21_inpStock" value="0" min="0" style="padding:10px 12px;border-radius:6px;border:1px solid #334155;background:#0f172a;color:#f1f5f9;font-size:13px;"></div>" +
-          "<div class="form-group" style="display:flex;flex-direction:column;gap:6px;"><label style="font-size:12px;font-weight:500;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px;">Stock Minimo</label><input type="number" id="f21_inpStockMin" value="0" min="0" style="padding:10px 12px;border-radius:6px;border:1px solid #334155;background:#0f172a;color:#f1f5f9;font-size:13px;"></div>" +
-          "<div class="form-group" style="display:flex;flex-direction:column;gap:6px;"><label style="font-size:12px;font-weight:500;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px;">Costo Unitario</label><input type="number" id="f21_inpCosto" value="0" step="0.01" min="0" style="padding:10px 12px;border-radius:6px;border:1px solid #334155;background:#0f172a;color:#f1f5f9;font-size:13px;"></div>" +
-          "<div class="form-group" style="display:flex;flex-direction:column;gap:6px;"><label style="font-size:12px;font-weight:500;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px;">Moneda Costo</label><select id="f21_inpMoneda" style="padding:10px 12px;border-radius:6px;border:1px solid #334155;background:#0f172a;color:#f1f5f9;font-size:13px;"><option value="VES">VES (Bolivar)</option><option value="USD">USD (Dolar)</option><option value="EUR">EUR (Euro)</option></select></div>" +
-        "</div>" +
-      "</div>" +
-      "<div class="modal-footer" style="padding:0 20px 20px;display:flex;justify-content:flex-end;gap:10px;">" +
-        "<button class="btn btn-secondary" id="f21_btnCancel">Cancelar</button>" +
-        "<button class="btn btn-primary" id="f21_btnSave"><i class="fas fa-save"></i> Guardar</button>" +
-      "</div>" +
-    "</div>" +
-  "</div>";
+  var MODAL_HTML = '<div class="modal-overlay" id="f21_modal" style="display:none;align-items:center;justify-content:center;">' +
+    '<div class="modal-content" style="background:#1e293b;border:1px solid #334155;border-radius:12px;width:100%;max-width:600px;max-height:90vh;overflow-y:auto;">' +
+      '<div class="modal-header" style="padding:20px;border-bottom:1px solid #334155;display:flex;align-items:center;justify-content:space-between;">' +
+        '<div class="modal-title" id="f21_modalTitle" style="font-size:16px;font-weight:600;color:#f1f5f9;">Agregar Material</div>' +
+        '<button id="f21_modalClose" style="width:32px;height:32px;border-radius:6px;background:#334155;border:none;color:#f1f5f9;cursor:pointer;font-size:18px;display:flex;align-items:center;justify-content:center;">&times;</button>' +
+      '</div>' +
+      '<div class="modal-body" style="padding:20px;">' +
+        '<div class="form-grid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;">' +
+          '<div class="form-group" style="display:flex;flex-direction:column;gap:6px;"><label style="font-size:12px;font-weight:500;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px;">Codigo</label><input type="text" id="f21_inpCodigo" placeholder="Ej: MP006" style="padding:10px 12px;border-radius:6px;border:1px solid #334155;background:#0f172a;color:#f1f5f9;font-size:13px;"></div>' +
+          '<div class="form-group" style="display:flex;flex-direction:column;gap:6px;"><label style="font-size:12px;font-weight:500;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px;">Nombre</label><input type="text" id="f21_inpNombre" placeholder="Nombre del material" style="padding:10px 12px;border-radius:6px;border:1px solid #334155;background:#0f172a;color:#f1f5f9;font-size:13px;"></div>' +
+          '<div class="form-group" style="display:flex;flex-direction:column;gap:6px;"><label style="font-size:12px;font-weight:500;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px;">Categoria</label><select id="f21_inpCategoria" style="padding:10px 12px;border-radius:6px;border:1px solid #334155;background:#0f172a;color:#f1f5f9;font-size:13px;"></select></div>' +
+          '<div class="form-group" style="display:flex;flex-direction:column;gap:6px;"><label style="font-size:12px;font-weight:500;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px;">Unidad</label><select id="f21_inpUnidad" style="padding:10px 12px;border-radius:6px;border:1px solid #334155;background:#0f172a;color:#f1f5f9;font-size:13px;"></select></div>' +
+          '<div class="form-group" style="display:flex;flex-direction:column;gap:6px;"><label style="font-size:12px;font-weight:500;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px;">Stock Inicial</label><input type="number" id="f21_inpStock" value="0" min="0" style="padding:10px 12px;border-radius:6px;border:1px solid #334155;background:#0f172a;color:#f1f5f9;font-size:13px;"></div>' +
+          '<div class="form-group" style="display:flex;flex-direction:column;gap:6px;"><label style="font-size:12px;font-weight:500;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px;">Stock Minimo</label><input type="number" id="f21_inpStockMin" value="0" min="0" style="padding:10px 12px;border-radius:6px;border:1px solid #334155;background:#0f172a;color:#f1f5f9;font-size:13px;"></div>' +
+          '<div class="form-group" style="display:flex;flex-direction:column;gap:6px;"><label style="font-size:12px;font-weight:500;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px;">Costo Unitario</label><input type="number" id="f21_inpCosto" value="0" step="0.01" min="0" style="padding:10px 12px;border-radius:6px;border:1px solid #334155;background:#0f172a;color:#f1f5f9;font-size:13px;"></div>' +
+          '<div class="form-group" style="display:flex;flex-direction:column;gap:6px;"><label style="font-size:12px;font-weight:500;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px;">Moneda Costo</label><select id="f21_inpMoneda" style="padding:10px 12px;border-radius:6px;border:1px solid #334155;background:#0f172a;color:#f1f5f9;font-size:13px;"><option value="VES">VES (Bolivar)</option><option value="USD">USD (Dolar)</option><option value="EUR">EUR (Euro)</option></select></div>' +
+        '</div>' +
+      '</div>' +
+      '<div class="modal-footer" style="padding:0 20px 20px;display:flex;justify-content:flex-end;gap:10px;">' +
+        '<button class="btn btn-secondary" id="f21_btnCancel">Cancelar</button>' +
+        '<button class="btn btn-primary" id="f21_btnSave"><i class="fas fa-save"></i> Guardar</button>' +
+      '</div>' +
+    '</div>' +
+  '</div>';
 
   // ─── CSS SCOPED ───
-  var PLUGIN_CSS = "
-/* FASE2_1 - Materias Primas */
-" +
-    "#mod-fase2 .f21-wrapper { padding: 0; }
-" +
-    "#mod-fase2 .f21-kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px; }
-" +
-    "#mod-fase2 .f21-kpi-card { background: #1e293b; border: 1px solid #334155; border-radius: 12px; padding: 20px; }
-" +
-    "#mod-fase2 .f21-kpi-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
-" +
-    "#mod-fase2 .f21-kpi-title { font-size: 12px; text-transform: uppercase; letter-spacing: .5px; color: #94a3b8; }
-" +
-    "#mod-fase2 .f21-kpi-icon { width: 36px; height: 36px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 16px; }
-" +
-    "#mod-fase2 .f21-kpi-icon.blue { background: rgba(59,130,246,.15); color: #3b82f6; }
-" +
-    "#mod-fase2 .f21-kpi-icon.red { background: rgba(239,68,68,.15); color: #ef4444; }
-" +
-    "#mod-fase2 .f21-kpi-icon.green { background: rgba(16,185,129,.15); color: #10b981; }
-" +
-    "#mod-fase2 .f21-kpi-value { font-size: 28px; font-weight: 700; color: #f1f5f9; }
-" +
-    "#mod-fase2 .f21-search-bar { display: flex; gap: 10px; margin-bottom: 16px; flex-wrap: wrap; }
-" +
-    "#mod-fase2 .f21-search-input { flex: 1; min-width: 200px; padding: 10px 14px; border-radius: 8px; border: 1px solid #334155; background: #0f172a; color: #f1f5f9; font-size: 13px; outline: none; }
-" +
-    "#mod-fase2 .f21-search-input:focus { border-color: #3b82f6; }
-" +
-    "#mod-fase2 .f21-filter-select { padding: 10px 14px; border-radius: 8px; border: 1px solid #334155; background: #0f172a; color: #f1f5f9; font-size: 13px; min-width: 150px; outline: none; }
-" +
-    "#mod-fase2 .f21-filter-select:focus { border-color: #3b82f6; }
-" +
-    "#mod-fase2 .f21-table-wrapper { overflow-x: auto; }
-" +
-    "#mod-fase2 .mp-stock { font-size: 18px; font-weight: 700; }
-" +
-    "#mod-fase2 .mp-stock.low { color: #ef4444; }
-" +
-    "#mod-fase2 .mp-stock.ok { color: #10b981; }
-" +
-    "#mod-fase2 #f21_modal.active { display: flex !important; }
-" +
-    "#mod-fase2 #f21_modal { z-index: 2500; position: fixed; inset: 0; background: rgba(0,0,0,.7); }
-";
+  var PLUGIN_CSS = [
+    '/* FASE2_1 - Materias Primas */',
+    '#mod-fase2 .f21-wrapper { padding: 0; }',
+    '#mod-fase2 .f21-kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px; }',
+    '#mod-fase2 .f21-kpi-card { background: #1e293b; border: 1px solid #334155; border-radius: 12px; padding: 20px; }',
+    '#mod-fase2 .f21-kpi-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }',
+    '#mod-fase2 .f21-kpi-title { font-size: 12px; text-transform: uppercase; letter-spacing: .5px; color: #94a3b8; }',
+    '#mod-fase2 .f21-kpi-icon { width: 36px; height: 36px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 16px; }',
+    '#mod-fase2 .f21-kpi-icon.blue { background: rgba(59,130,246,.15); color: #3b82f6; }',
+    '#mod-fase2 .f21-kpi-icon.red { background: rgba(239,68,68,.15); color: #ef4444; }',
+    '#mod-fase2 .f21-kpi-icon.green { background: rgba(16,185,129,.15); color: #10b981; }',
+    '#mod-fase2 .f21-kpi-value { font-size: 28px; font-weight: 700; color: #f1f5f9; }',
+    '#mod-fase2 .f21-search-bar { display: flex; gap: 10px; margin-bottom: 16px; flex-wrap: wrap; }',
+    '#mod-fase2 .f21-search-input { flex: 1; min-width: 200px; padding: 10px 14px; border-radius: 8px; border: 1px solid #334155; background: #0f172a; color: #f1f5f9; font-size: 13px; outline: none; }',
+    '#mod-fase2 .f21-search-input:focus { border-color: #3b82f6; }',
+    '#mod-fase2 .f21-filter-select { padding: 10px 14px; border-radius: 8px; border: 1px solid #334155; background: #0f172a; color: #f1f5f9; font-size: 13px; min-width: 150px; outline: none; }',
+    '#mod-fase2 .f21-filter-select:focus { border-color: #3b82f6; }',
+    '#mod-fase2 .f21-table-wrapper { overflow-x: auto; }',
+    '#mod-fase2 .mp-stock { font-size: 18px; font-weight: 700; }',
+    '#mod-fase2 .mp-stock.low { color: #ef4444; }',
+    '#mod-fase2 .mp-stock.ok { color: #10b981; }',
+    '#mod-fase2 #f21_modal.active { display: flex !important; }',
+    '#mod-fase2 #f21_modal { z-index: 2500; position: fixed; inset: 0; background: rgba(0,0,0,.7); }'
+  ].join('\n');
 
   // ─── FUNCION PRINCIPAL DE RENDER (llamada por el modulo padre) ───
   function render() {
@@ -560,7 +539,7 @@
   // ═══════════════════════════════════════════════════════════════════════════════
 
   var pluginDef = {
-    id: PLUGIN_ID,
+    id: "FASE2_1",
     nombre: PLUGIN_NAME,
     version: PLUGIN_VERSION,
     fasePrincipal: PLUGIN_FASE,
