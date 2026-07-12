@@ -224,6 +224,7 @@ body{font-family:'Inter',system-ui,sans-serif;background:#0f172a;color:#f1f5f9;m
 .update-progress{width:100%;height:4px;background:#334155;border-radius:2px;margin-top:8px;overflow:hidden}
 .update-progress-bar{height:100%;background:#3b82f6;border-radius:2px;transition:width .3s}
 </style>
+<base target="_blank">
 </head>
 <body>
 
@@ -2003,12 +2004,8 @@ body{font-family:'Inter',system-ui,sans-serif;background:#0f172a;color:#f1f5f9;m
 var ERP_VERSION = "3.0.0";
 var ERP_SCHEMA_VERSION = "3.0.0";
 
-// Fallback en memoria cuando localStorage no está disponible (sandbox, preview, etc.)
-var _dbEnMemoria = null;
-var _localStorageOK = (function() {
-  try { var t = "__erp_test__"; localStorage.setItem(t, "1"); localStorage.removeItem(t); return true; }
-  catch(e) { console.warn("ERP: localStorage no disponible, modo memoria activo"); return false; }
-})();
+// Detectar si localStorage está disponible
+var _localStorageOK = (function(){try{var t="__t__";localStorage.setItem(t,"1");localStorage.removeItem(t);return true;}catch(e){return false;}})();
 
 // Configuracion por defecto
 var config = {
@@ -2115,18 +2112,16 @@ var erp = {
   version: ERP_VERSION,
 
   getDB: function() {
-    if (!_localStorageOK) {
-      if (!_dbEnMemoria) _dbEnMemoria = getEmptyDB();
-      return _dbEnMemoria;
-    }
+    if (!_localStorageOK) { if (!window.__erp_db) window.__erp_db = getEmptyDB(); return window.__erp_db; }
     var data = localStorage.getItem("erp_data_v3");
     if (!data) {
       var db = getEmptyDB();
       localStorage.setItem("erp_data_v3", JSON.stringify(db));
       return db;
     }
-    try { return JSON.parse(data); }
-    catch(e) {
+    try {
+      return JSON.parse(data);
+    } catch(e) {
       console.error("ERP DB corrupta, reiniciando");
       var db = getEmptyDB();
       localStorage.setItem("erp_data_v3", JSON.stringify(db));
@@ -2136,12 +2131,9 @@ var erp = {
 
   saveLocal: function(db) {
     db.ultimaModificacion = new Date().toISOString();
-    if (!_localStorageOK) { _dbEnMemoria = db; updateSystemStatus(); return; }
+    if (!_localStorageOK) { window.__erp_db = db; updateSystemStatus(); return; }
     try { localStorage.setItem("erp_data_v3", JSON.stringify(db)); }
-    catch(e) {
-      if (e.name === "QuotaExceededError") showToast("error", "Almacenamiento Lleno", "Elimina snapshots antiguos");
-      throw e;
-    }
+    catch(e) { if (e.name === "QuotaExceededError") showToast("error", "Almacenamiento Lleno", "Elimina snapshots antiguos"); throw e; }
     updateSystemStatus();
   },
 
@@ -2427,7 +2419,7 @@ function updateKPIs() {
 }
 
 function initChart() {
-  if (typeof Chart === "undefined") { console.warn("ERP: Chart.js no disponible"); return; }
+  if (typeof Chart === "undefined") return;
   var db = getDB();
   var ctx = document.getElementById("chartVentas");
   if (!ctx) return;
@@ -2558,12 +2550,22 @@ function updateSystemStatus() {
 
 // Snapshots
 function createSnapshot() {
-  if (!_localStorageOK) { showToast("warning", "Snapshot", "No disponible en modo memoria. Usa Exportar JSON."); return; }
+  if (!_localStorageOK) { showToast("warning", "Snapshot", "No disponible sin localStorage. Usa Exportar JSON."); return; }
   var db = getDB();
   if (!db.snapshots) db.snapshots = [];
-  var snapshot = { id: "SNAP_" + Date.now(), fecha: new Date().toISOString(), descripcion: "Snapshot manual", version: ERP_VERSION, size: JSON.stringify(db).length };
-  try { localStorage.setItem("erp_snap_" + snapshot.id, JSON.stringify(db)); }
-  catch(e) { showToast("error", "Error", "No hay espacio para snapshot."); return; }
+  var snapshot = {
+    id: "SNAP_" + Date.now(),
+    fecha: new Date().toISOString(),
+    descripcion: "Snapshot manual - " + new Date().toLocaleString(),
+    version: ERP_VERSION,
+    size: JSON.stringify(db).length
+  };
+  try {
+    localStorage.setItem("erp_snap_" + snapshot.id, JSON.stringify(db));
+  } catch(e) {
+    showToast("error", "Error", "No hay espacio para snapshot. Limpia datos antiguos.");
+    return;
+  }
   db.snapshots.unshift(snapshot);
   if (db.snapshots.length > 10) {
     var removed = db.snapshots.pop();
@@ -2718,36 +2720,10 @@ function setupAutoCheck() {
 async function checkForUpdates(mostrarToast) {
   var db = getDB();
   var url = db.config && db.config.catalogoURL ? db.config.catalogoURL : "";
-  var esFile = window.location.protocol === "file:";
-  if (esFile) console.log("ERP: Modo FILE detectado");
+  if (window.location.protocol === "file:") { procesarCatalogo([], mostrarToast, true); return; }
 
-  // Catálogo embebido (funciona sin internet)
+  // Catalogo embebido minimo como fallback
   var catalogoEmbutido = [
-    {"id":"FASE2_1","nombre":"Tabla Materiales","version":"1.0.0","fasePrincipal":2,"microFase":"2.1","descripcion":"Tabla de materias primas con filtros, busqueda y estado de stock","autor":"VIAO35","size":15230,"dependencias":[],"url":"https://viao35.github.io/plugins/FASE2_1.js"},
-    {"id":"FASE2_2","nombre":"Formulario Agregar Material","version":"1.0.0","fasePrincipal":2,"microFase":"2.2","descripcion":"Modal para agregar nuevos materiales al inventario","autor":"VIAO35","size":12400,"dependencias":["FASE2_1"],"url":"https://viao35.github.io/plugins/FASE2_2.js"},
-    {"id":"FASE2_3","nombre":"Editar + Eliminar Material","version":"1.0.0","fasePrincipal":2,"microFase":"2.3","descripcion":"Edicion inline y eliminacion de materiales","autor":"VIAO35","size":11800,"dependencias":["FASE2_2"],"url":"https://viao35.github.io/plugins/FASE2_3.js"},
-    {"id":"FASE2_4","nombre":"Categorias + Unidades CRUD","version":"1.0.0","fasePrincipal":2,"microFase":"2.4","descripcion":"Gestion completa de categorias y unidades de medida","autor":"VIAO35","size":10500,"dependencias":["FASE2_1"],"url":"https://viao35.github.io/plugins/FASE2_4.js"},
-    {"id":"FASE2_5","nombre":"Movimientos Entrada","version":"1.0.0","fasePrincipal":2,"microFase":"2.5","descripcion":"Registro de movimientos de entrada al almacen","autor":"VIAO35","size":13800,"dependencias":["FASE2_1"],"url":"https://viao35.github.io/plugins/FASE2_5.js"},
-    {"id":"FASE2_6","nombre":"Movimientos Salida + Stock Minimo","version":"1.0.0","fasePrincipal":2,"microFase":"2.6","descripcion":"Registro de salidas, inventario fisico, alertas de stock","autor":"VIAO35","size":15600,"dependencias":["FASE2_5"],"url":"https://viao35.github.io/plugins/FASE2_6.js"}
-  ];
-  window.ERP_GITHUB_URL = "https://github.com/VIAO35/VIAO35.github.io/tree/main/plugins";
-
-  if (esFile || !url) { catalogoRemoto = catalogoEmbutido; procesarCatalogo(catalogoEmbutido, mostrarToast, true); return; }
-
-  showLoading(true, "Verificando actualizaciones...");
-  try {
-    var response = await fetch(url + "?_t=" + Date.now(), {method:"GET", headers:{"Accept":"application/json"}});
-    if (!response.ok) throw new Error("HTTP " + response.status);
-    var catalogo = await response.json();
-    catalogoRemoto = catalogo.plugins || catalogo || [];
-    procesarCatalogo(catalogoRemoto, mostrarToast, false);
-  } catch(err) {
-    console.error("Check updates error:", err);
-    catalogoRemoto = catalogoEmbutido;
-    procesarCatalogo(catalogoEmbutido, mostrarToast, true);
-    if (mostrarToast) showToast("warning", "Offline", "Usando catalogo embebido.");
-  } finally { showLoading(false); }
-}
     {"id":"FASE2_1","nombre":"Tabla Materiales","version":"1.0.0","fasePrincipal":2,"microFase":"2.1","descripcion":"Tabla de materias primas con filtros, busqueda y estado de stock","autor":"VIAO35","size":15230,"dependencias":[],"url":"https://viao35.github.io/plugins/FASE2_1.js"},
     {"id":"FASE2_2","nombre":"Formulario Agregar Material","version":"1.0.0","fasePrincipal":2,"microFase":"2.2","descripcion":"Modal para agregar nuevos materiales al inventario","autor":"VIAO35","size":12400,"dependencias":["FASE2_1"],"url":"https://viao35.github.io/plugins/FASE2_2.js"},
     {"id":"FASE2_3","nombre":"Editar + Eliminar Material","version":"1.0.0","fasePrincipal":2,"microFase":"2.3","descripcion":"Edicion inline y eliminacion de materiales","autor":"VIAO35","size":11800,"dependencias":["FASE2_2"],"url":"https://viao35.github.io/plugins/FASE2_3.js"},
@@ -2941,13 +2917,11 @@ function showUpdateModal() {
 function renderUpdatesPanel() {
   var container = document.getElementById("updatesContainer");
   if (!container) return;
-  var esFile = window.location.protocol === "file:";
-  var banner = esFile ? '<div style="background:rgba(245,158,11,0.1);border:1px solid #f59e0b;border-radius:8px;padding:12px;margin-bottom:16px;color:#f59e0b;font-size:13px"><i class="fas fa-info-circle" style="margin-right:8px"></i><strong>Modo Archivo Local:</strong> Descarga los .js desde GitHub e instala manualmente en Plugins.</div>' : '';
 
   if (updatesDisponibles.length === 0) {
-    container.innerHTML = banner + '<div style="color:#94a3b8;text-align:center;padding:40px"><i class="fas fa-check-circle" style="font-size:48px;margin-bottom:16px;display:block;color:#10b981"></i>Sistema actualizado. No hay actualizaciones pendientes.</div>';
+    container.innerHTML = '<div style="color:#94a3b8;text-align:center;padding:40px"><i class="fas fa-check-circle" style="font-size:48px;margin-bottom:16px;display:block;color:#10b981"></i>Sistema actualizado. No hay actualizaciones pendientes.</div>';
   } else {
-    var html = banner + '<div style="display:flex;flex-direction:column;gap:8px">';
+    var html = '<div style="display:flex;flex-direction:column;gap:8px">';
     for (var i = 0; i < updatesDisponibles.length; i++) {
       var u = updatesDisponibles[i];
       var icono = u.tipo === "nuevo" ? "fa-plus-circle" : "fa-arrow-up";
@@ -3011,25 +2985,42 @@ async function installSingleUpdate(pluginId) {
 // ============================================================
 
 async function installPluginFromURL(updateInfo) {
-  if (!updateInfo || !updateInfo.id) { showToast("error", "Error", "ID del plugin no disponible"); return false; }
-  if (window.location.protocol === "file:") { showToast("info", "Modo Archivo Local", "Descarga el .js desde GitHub e instala manualmente."); return false; }
-  if (!updateInfo.url) { showToast("error", "Error", "URL del plugin no disponible"); return false; }
+  if (!updateInfo || !updateInfo.url) {
+    showToast("error", "Error", "URL del plugin no disponible");
+    return false;
+  }
 
   try {
+    // Verificar dependencias
     var db = getDB();
     var instalados = db.pluginsInstalled || [];
     var dependencias = updateInfo.dependencias || [];
+
     for (var i = 0; i < dependencias.length; i++) {
       var depId = dependencias[i];
+      // FASE1_10 siempre se considera instalado (es el Core)
       if (depId === "FASE1_10") continue;
-      if (!instalados.some(function(p) { return p.id === depId; })) {
-        showToast("warning", "Dependencia Faltante", "Requiere " + depId); return false;
+      var tieneDep = instalados.some(function(p) { return p.id === depId; });
+      if (!tieneDep) {
+        showToast("warning", "Dependencia Faltante", 
+          "Requiere " + depId + ". Instala las dependencias primero.");
+        return false;
       }
     }
-    var fetchUrl = updateInfo.url + "?_t=" + Date.now();
+
+    // Fetch del plugin
+    var fetchUrl = updateInfo.url + (updateInfo.url.indexOf("?") > 0 ? "&" : "?") + "_t=" + Date.now();
     showLoading(true, "Descargando " + updateInfo.nombre + "...");
-    var response = await fetch(fetchUrl, {method: "GET", headers: {"Accept": "application/javascript"}});
-    if (!response.ok) throw new Error("HTTP " + response.status);
+
+    var response = await fetch(fetchUrl, {
+      method: "GET",
+      headers: {"Accept": "application/javascript"}
+    });
+
+    if (!response.ok) {
+      throw new Error("HTTP " + response.status);
+    }
+
     var code = await response.text();
 
     // Validar que es un plugin ERP
@@ -3245,23 +3236,23 @@ function actualizarBadgeFase(pluginId) {
 function renderPluginsPanel() {
   var container = document.getElementById("pluginsList");
   if (!container) return;
-  var esFile = window.location.protocol === "file:";
-  var banner = esFile ? '<div style="background:rgba(59,130,246,0.1);border:1px solid #3b82f6;border-radius:8px;padding:12px;margin-bottom:16px;color:#3b82f6;font-size:13px"><i class="fas fa-download" style="margin-right:8px"></i><strong>Plugins en GitHub:</strong> <a href="' + (window.ERP_GITHUB_URL || "https://github.com/VIAO35/VIAO35.github.io") + '" target="_blank" style="color:#60a5fa;text-decoration:underline">Descargar .js</a> e instalar manualmente.</div>' : '';
 
   var db = getDB();
   var instalados = db.pluginsInstalled || [];
+
   if (instalados.length === 0 && Object.keys(plugins).length === 0) {
-    container.innerHTML = banner + '<div style="color:#94a3b8;text-align:center;padding:20px">No hay plugins instalados. Ve a Actualizaciones para instalar.</div>';
+    container.innerHTML = '<div style="color:#94a3b8;text-align:center;padding:20px">No hay plugins instalados. Ve a Actualizaciones para instalar.</div>';
     return;
   }
-  var html = banner + '<div style="display:flex;flex-direction:column;gap:8px">';
+
+  var html = '<div style="display:flex;flex-direction:column;gap:8px">';
   for (var i = 0; i < instalados.length; i++) {
     var p = instalados[i];
     var esCore = (p.id === "FASE1_10");
     var enMemoria = esCore || !!plugins[p.id] || !!microFases[p.id];
     var badgeClass = enMemoria ? 'badge-success' : 'badge-danger';
     var badgeText = enMemoria ? 'Activo' : 'Inactivo';
-    var btnDesinstalar = esCore ? '' : '<div style="margin-top:4px"><button class="btn btn-danger btn-sm" onclick="uninstallPlugin('' + p.id + '')"><i class="fas fa-trash"></i> Desinstalar</button></div>';
+    var btnDesinstalar = esCore ? '' : '<div style="margin-top:4px"><button class="btn btn-danger btn-sm" onclick="uninstallPlugin(\'' + p.id + '\')"><i class="fas fa-trash"></i> Desinstalar</button></div>';
     html += '<div class="snapshot-row" style="flex-wrap:wrap">' +
       '<div style="width:40px;height:40px;border-radius:8px;background:#3b82f6;display:flex;align-items:center;justify-content:center"><i class="fas fa-puzzle-piece" style="color:#fff"></i></div>' +
       '<div style="flex:1;min-width:200px"><div style="font-weight:600;color:#f1f5f9">' + p.nombre + '</div><div style="font-size:11px;color:#94a3b8">' + p.id + ' v' + p.version + '</div></div>' +
@@ -3382,31 +3373,38 @@ function handlePluginFile(event) {
 function rehydratePlugins() {
   var db = getDB();
   if (!db.pluginsInstalled) db.pluginsInstalled = [];
-  // FASE1_10 (Core) siempre activo
-  plugins["FASE1_10"] = {id:"FASE1_10", nombre:"Core Base Completo", version:"3.0.0", init:function(){}};
+  plugins["FASE1_10"] = {id:"FASE1_10",nombre:"Core Base Completo",version:"3.0.0",init:function(){}};
+  // Asegurar FASE1_10 siempre presente
   var tieneFASE1_10 = db.pluginsInstalled.some(function(p) { return p.id === "FASE1_10"; });
   if (!tieneFASE1_10) {
-    db.pluginsInstalled.unshift({id:"FASE1_10", nombre:"Core Base Completo", version:"3.0.0", fechaInstalacion:new Date().toISOString(), url:"core", autor:"VIAO35"});
+    db.pluginsInstalled.unshift({id:"FASE1_10",nombre:"Core Base Completo",version:"3.0.0",fechaInstalacion:new Date().toISOString(),url:"core",autor:"VIAO35"});
     saveLocal(db);
   }
-  // Re-hidratar solo si localStorage existe
-  if (_localStorageOK) {
-    var count = 0;
-    for (var i = 0; i < db.pluginsInstalled.length; i++) {
-      var code = localStorage.getItem("erp_plugin_code_" + db.pluginsInstalled[i].id);
-      if (code) {
-        try {
-          var blob = new Blob([code], {type: "application/javascript"});
-          var blobUrl = URL.createObjectURL(blob);
-          var script = document.createElement("script");
-          script.src = blobUrl;
-          script.onload = function() { URL.revokeObjectURL(blobUrl); };
-          document.head.appendChild(script);
-          count++;
-        } catch(e) { console.error("Error re-hidratando", e); }
+  var instalados = db.pluginsInstalled || [];
+  var count = 0;
+  if (!_localStorageOK) { renderPluginsPanel(); return; }
+
+  for (var i = 0; i < instalados.length; i++) {
+    var code = localStorage.getItem("erp_plugin_code_" + instalados[i].id);
+    if (code) {
+      try {
+        var blob = new Blob([code], {type: "application/javascript"});
+        var blobUrl = URL.createObjectURL(blob);
+        var script = document.createElement("script");
+        script.src = blobUrl;
+        script.type = "text/javascript";
+        script.onload = function() { URL.revokeObjectURL(blobUrl); };
+        document.head.appendChild(script);
+        count++;
+      } catch(e) {
+        console.error("Error re-hidratando " + instalados[i].id, e);
       }
     }
-    if (count > 0) showToast("info", "Re-hidratacion", count + " plugin(s) restaurado(s)");
+  }
+
+  renderPluginsPanel();
+  if (count > 0) {
+    showToast("info", "Re-hidratacion", count + " plugin(s) restaurado(s)");
   }
 }
 
@@ -3416,13 +3414,10 @@ function rehydratePlugins() {
 
 function init() {
   var db = getDB();
-  // Si DB vacía, cargar datos de demo
-  var vacia = (!db.materiasPrimas || db.materiasPrimas.length === 0) &&
-              (!db.clientes || db.clientes.length === 0) &&
-              (!db.ventasMensuales || db.ventasMensuales.length === 0);
+  var vacia = (!db.materiasPrimas || db.materiasPrimas.length === 0) && (!db.ventasMensuales || db.ventasMensuales.length === 0);
   if (vacia) { initDemoData(); db = getDB(); }
 
-  // Sincronizar config
+  // Sincronizar config global con DB
   if (db.config) {
     config.monedaBase = db.config.monedaBase || config.monedaBase;
     config.iva = db.config.iva || config.iva;
@@ -3435,6 +3430,7 @@ function init() {
     config.checkInterval = db.config.checkInterval || 0;
   }
 
+  // Re-hidratar plugins instalados
   rehydratePlugins();
 
   // UI
@@ -3464,10 +3460,7 @@ window.addEventListener("DOMContentLoaded", init);
 window.addEventListener("resize", function() {
   if (window.innerWidth > 768) document.getElementById("sidebar").classList.remove("open");
 });
-// Respaldo: si DOM ya listo, iniciar ahora
-if (document.readyState === "complete" || document.readyState === "interactive") {
-  setTimeout(init, 50);
-}
+if (document.readyState === "complete" || document.readyState === "interactive") setTimeout(init, 50);
 
 
 
