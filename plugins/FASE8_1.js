@@ -9,34 +9,34 @@
 (function() {
   "use strict";
 
-  var PLUGIN_ID       = "FASE8_1";
-  var PLUGIN_VERSION  = "3.0.0";
-  var PLUGIN_NAME     = "Monedas CRUD";
-  var PLUGIN_FASE     = 8;
-  var PLUGIN_MICRO    = "8.1";
-  var SCHEMA_REQ      = "3.0.0";
-  var DEPENDENCIAS    = ["FASE1_10"];
-  var PARENT_MODULE   = "fase8";
+  const PLUGIN_ID       = "FASE8_1";
+  const PLUGIN_VERSION  = "3.0.0";
+  const PLUGIN_NAME     = "Monedas CRUD";
+  const PLUGIN_FASE     = 8;
+  const PLUGIN_MICRO    = "8.1";
+  const SCHEMA_REQ      = "3.0.0";
+  const DEPENDENCIAS    = ["FASE1_10"];
+  const PARENT_MODULE   = "fase8";
 
-  var _erp = null;
-  var editingId = null;
-  var initialized = false;
+  let _erp = null;
+  let editingId = null;
+  let initialized = false;
 
   function $(id) { return document.getElementById(id); }
 
   // ─── RENDERIZAR TABLA ───
   function renderTable() {
-    var db = _erp.getDB();
-    var monedas = db.monedas || [];
-    var tbody = $("f81_tbody");
+    const db = _erp.getDB();
+    const monedas = db.monedas || [];
+    const tbody = $("f81_tbody");
     if (!tbody) return;
 
     if (monedas.length === 0) {
       tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:#94a3b8;padding:20px">No hay monedas configuradas</td></tr>';
     } else {
-      var html = "";
-      for (var i = 0; i < monedas.length; i++) {
-        var m = monedas[i];
+      let html = "";
+      for (let i = 0; i < monedas.length; i++) {
+        const m = monedas[i];
         html += '<tr>' +
           '<td><strong>' + m.codigo + '</strong></td>' +
           '<td>' + m.nombre + '</td>' +
@@ -44,7 +44,7 @@
           '<td>' + m.decimales + '</td>' +
           '<td>' + (m.esBase ? '<span class="badge badge-success">SI</span>' : '<span class="badge badge-secondary">NO</span>') + '</td>' +
           '<td class="actions">' +
-            '<button class="btn btn-primary btn-sm" onclick="window.FASE8_1.editMoneda('' + m.codigo + '')"><i class="fas fa-edit"></i></button>' +
+            '<button class="btn btn-primary btn-sm" onclick="window.FASE8_1.editMoneda(&quot;' + m.codigo + '&quot;)"><i class="fas fa-edit"></i></button>' +
           '</td>' +
         '</tr>';
       }
@@ -55,11 +55,11 @@
     _erp.updateKPI(PARENT_MODULE, "monedas-count", monedas.length, monedas.length + " monedas");
 
     // Actualizar cards grid
-    var grid = $("f81_monedasGrid");
+    const grid = $("f81_monedasGrid");
     if (grid) {
-      var html = "";
-      for (var i = 0; i < monedas.length; i++) {
-        var m = monedas[i];
+      let html = "";
+      for (let i = 0; i < monedas.length; i++) {
+        const m = monedas[i];
         html += '<div class="moneda-card">' +
           '<div class="moneda-simbolo">' + m.simbolo + '</div>' +
           '<div class="moneda-nombre">' + m.nombre + '</div>' +
@@ -74,21 +74,21 @@
   // ─── MODAL: EDITAR MONEDA ───
   function openEdit(codigo) {
     editingId = codigo;
-    var db = _erp.getDB();
-    var monedas = db.monedas || [];
-    var m = null;
-    for (var i = 0; i < monedas.length; i++) {
+    const db = _erp.getDB();
+    const monedas = db.monedas || [];
+    let m = null;
+    for (let i = 0; i < monedas.length; i++) {
       if (monedas[i].codigo === codigo) { m = monedas[i]; break; }
     }
     if (!m) return;
 
-    var modalTitle = $("f81_modalTitle");
-    var inpCodigo = $("f81_inpCodigo");
-    var inpNombre = $("f81_inpNombre");
-    var inpSimbolo = $("f81_inpSimbolo");
-    var inpDecimales = $("f81_inpDecimales");
-    var inpEsBase = $("f81_inpEsBase");
-    var modal = $("f81_modal");
+    const modalTitle = $("f81_modalTitle");
+    const inpCodigo = $("f81_inpCodigo");
+    const inpNombre = $("f81_inpNombre");
+    const inpSimbolo = $("f81_inpSimbolo");
+    const inpDecimales = $("f81_inpDecimales");
+    const inpEsBase = $("f81_inpEsBase");
+    const modal = $("f81_modal");
 
     if (modalTitle) modalTitle.textContent = "Editar Moneda";
     if (inpCodigo) { inpCodigo.value = m.codigo; inpCodigo.disabled = true; }
@@ -101,42 +101,42 @@
 
   // ─── CERRAR MODAL ───
   function closeModal() {
-    var modal = $("f81_modal");
+    const modal = $("f81_modal");
     if (modal) modal.classList.remove("active");
     editingId = null;
   }
 
   // ─── GUARDAR MONEDA ───
   function saveMoneda() {
-    var inpCodigo = $("f81_inpCodigo");
-    var inpNombre = $("f81_inpNombre");
-    var inpSimbolo = $("f81_inpSimbolo");
-    var inpDecimales = $("f81_inpDecimales");
-    var inpEsBase = $("f81_inpEsBase");
+    const inpCodigo = $("f81_inpCodigo");
+    const inpNombre = $("f81_inpNombre");
+    const inpSimbolo = $("f81_inpSimbolo");
+    const inpDecimales = $("f81_inpDecimales");
+    const inpEsBase = $("f81_inpEsBase");
 
-    var codigo = (inpCodigo ? inpCodigo.value.trim() : "").toUpperCase();
-    var nombre = inpNombre ? inpNombre.value.trim() : "";
-    var simbolo = inpSimbolo ? inpSimbolo.value.trim() : "";
-    var decimales = parseInt(inpDecimales ? inpDecimales.value : 2) || 2;
-    var esBase = inpEsBase ? inpEsBase.checked : false;
+    const codigo = (inpCodigo ? inpCodigo.value.trim() : "").toUpperCase();
+    const nombre = inpNombre ? inpNombre.value.trim() : "";
+    const simbolo = inpSimbolo ? inpSimbolo.value.trim() : "";
+    const decimales = parseInt(inpDecimales ? inpDecimales.value : "2", 10) || 2;
+    const esBase = inpEsBase ? inpEsBase.checked : false;
 
     if (!codigo || !nombre || !simbolo) {
       _erp.showToast("warning", "Validacion", "Codigo, nombre y simbolo son obligatorios");
       return;
     }
 
-    var db = _erp.getDB();
+    const db = _erp.getDB();
     if (!db.monedas) db.monedas = [];
 
     if (editingId) {
-      var idx = -1;
-      for (var i = 0; i < db.monedas.length; i++) {
+      let idx = -1;
+      for (let i = 0; i < db.monedas.length; i++) {
         if (db.monedas[i].codigo === editingId) { idx = i; break; }
       }
       if (idx >= 0) {
         // Si esta moneda se marca como base, quitar base de las demas
         if (esBase) {
-          for (var j = 0; j < db.monedas.length; j++) {
+          for (let j = 0; j < db.monedas.length; j++) {
             if (j !== idx) db.monedas[j].esBase = false;
           }
         }
@@ -150,7 +150,7 @@
       }
     } else {
       // Verificar duplicado
-      for (var i = 0; i < db.monedas.length; i++) {
+      for (let i = 0; i < db.monedas.length; i++) {
         if (db.monedas[i].codigo === codigo) {
           _erp.showToast("error", "Error", "Ya existe una moneda con ese codigo");
           return;
@@ -158,7 +158,7 @@
       }
       // Si es base, quitar base de las demas
       if (esBase) {
-        for (var j = 0; j < db.monedas.length; j++) {
+        for (let j = 0; j < db.monedas.length; j++) {
           db.monedas[j].esBase = false;
         }
       }
@@ -184,22 +184,22 @@
 
   // ─── EVENT LISTENERS ───
   function bindEvents() {
-    var btnAdd = $("f81_btnAdd");
-    var modalClose = $("f81_modalClose");
-    var btnCancel = $("f81_btnCancel");
-    var btnSave = $("f81_btnSave");
-    var modal = $("f81_modal");
+    const btnAdd = $("f81_btnAdd");
+    const modalClose = $("f81_modalClose");
+    const btnCancel = $("f81_btnCancel");
+    const btnSave = $("f81_btnSave");
+    const modal = $("f81_modal");
 
     if (btnAdd) btnAdd.onclick = function() {
       editingId = null;
-      var modalTitle = $("f81_modalTitle");
-      var inpCodigo = $("f81_inpCodigo");
+      const modalTitle = $("f81_modalTitle");
+      const inpCodigo = $("f81_inpCodigo");
       if (modalTitle) modalTitle.textContent = "Agregar Moneda";
       if (inpCodigo) { inpCodigo.value = ""; inpCodigo.disabled = false; }
-      var inpNombre = $("f81_inpNombre"); if (inpNombre) inpNombre.value = "";
-      var inpSimbolo = $("f81_inpSimbolo"); if (inpSimbolo) inpSimbolo.value = "";
-      var inpDecimales = $("f81_inpDecimales"); if (inpDecimales) inpDecimales.value = "2";
-      var inpEsBase = $("f81_inpEsBase"); if (inpEsBase) inpEsBase.checked = false;
+      const inpNombre = $("f81_inpNombre"); if (inpNombre) inpNombre.value = "";
+      const inpSimbolo = $("f81_inpSimbolo"); if (inpSimbolo) inpSimbolo.value = "";
+      const inpDecimales = $("f81_inpDecimales"); if (inpDecimales) inpDecimales.value = "2";
+      const inpEsBase = $("f81_inpEsBase"); if (inpEsBase) inpEsBase.checked = false;
       if (modal) modal.classList.add("active");
     };
     if (modalClose) modalClose.onclick = closeModal;
@@ -211,7 +211,7 @@
   }
 
   // ─── HTML DEL CONTENIDO (se inyecta en el slot-content del padre) ───
-  var CONTENT_HTML = '<div class="f81-wrapper">' +
+  const CONTENT_HTML = '<div class="f81-wrapper">' +
     '<div class="kpi-grid" id="f81_monedasGrid"></div>' +
     '<div style="display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap">' +
       '<button class="btn btn-primary" id="f81_btnAdd"><i class="fas fa-plus"></i> Agregar Moneda</button>' +
@@ -225,7 +225,7 @@
   '</div>';
 
   // ─── HTML DEL MODAL ───
-  var MODAL_HTML = '<div class="modal-overlay" id="f81_modal" style="display:none;align-items:center;justify-content:center;">' +
+  const MODAL_HTML = '<div class="modal-overlay" id="f81_modal" style="display:none;align-items:center;justify-content:center;">' +
     '<div class="modal-content" style="background:#1e293b;border:1px solid #334155;border-radius:12px;width:100%;max-width:500px;max-height:90vh;overflow-y:auto;">' +
       '<div class="modal-header" style="padding:20px;border-bottom:1px solid #334155;display:flex;align-items:center;justify-content:space-between;">' +
         '<div class="modal-title" id="f81_modalTitle" style="font-size:16px;font-weight:600;color:#f1f5f9;">Agregar Moneda</div>' +
@@ -248,7 +248,7 @@
   '</div>';
 
   // ─── CSS SCOPED ───
-  var PLUGIN_CSS = [
+  const PLUGIN_CSS = [
     '/* FASE8_1 - Monedas CRUD */',
     '#mod-fase8 .f81-wrapper { padding: 0; }',
     '#mod-fase8 .moneda-card { background: #1e293b; border: 1px solid #334155; border-radius: 12px; padding: 20px; text-align: center; transition: .2s; margin-bottom: 16px; }',
@@ -266,15 +266,15 @@
   function render() {
     if (!_erp) return;
     // Inyectar contenido en el tab-content del modulo padre (tab1 = Monedas)
-    var tab1 = $("fase8-tab1-content");
+    const tab1 = $("fase8-tab1-content");
     if (tab1) {
       tab1.innerHTML = CONTENT_HTML;
       tab1.style.display = "block";
     }
     // Inyectar modal en slot-modals
-    var modalsSlot = $(PARENT_MODULE + "-slot-modals");
+    const modalsSlot = $(PARENT_MODULE + "-slot-modals");
     if (modalsSlot) {
-      var existente = $("f81_modal");
+      const existente = $("f81_modal");
       if (!existente) {
         modalsSlot.innerHTML = modalsSlot.innerHTML + MODAL_HTML;
       }
@@ -289,21 +289,21 @@
     initialized = true;
 
     // Inyectar CSS
-    var styleId = "erp-css-" + PLUGIN_ID;
-    var existente = $(styleId);
+    const styleId = "erp-css-" + PLUGIN_ID;
+    const existente = $(styleId);
     if (existente) existente.remove();
-    var style = document.createElement("style");
+    const style = document.createElement("style");
     style.id = styleId;
     style.textContent = PLUGIN_CSS;
     document.head.appendChild(style);
 
     // Habilitar boton del modulo padre
     _erp.enableButton(PARENT_MODULE, "nueva-moneda", function() {
-      var btnAdd = $("f81_btnAdd");
+      const btnAdd = $("f81_btnAdd");
       if (btnAdd) btnAdd.click();
     }, "Nueva Moneda", "fa-plus");
 
-    // Activar tab del modulo padre
+    // Actilet tab del modulo padre
     _erp.activateTab(PARENT_MODULE, "1", function() {
       render();
     }, "Monedas");
@@ -332,7 +332,7 @@
   // DEFINICION DEL PLUGIN
   // ═══════════════════════════════════════════════════════════════════════════════
 
-  var pluginDef = {
+  const pluginDef = {
     id: PLUGIN_ID,
     nombre: PLUGIN_NAME,
     version: PLUGIN_VERSION,
