@@ -9,44 +9,44 @@
 (function() {
   "use strict";
 
-  var PLUGIN_ID       = "FASE2_2";
-  var PLUGIN_VERSION  = "3.0.0";
-  var PLUGIN_NAME     = "Formulario Agregar Material";
-  var PLUGIN_FASE     = 2;
-  var PLUGIN_MICRO    = "2.2";
-  var SCHEMA_REQ      = "3.0.0";
-  var DEPENDENCIAS    = ["FASE2_1"];
-  var PARENT_MODULE   = "fase2";
+  let PLUGIN_ID       = "FASE2_2";
+  let PLUGIN_VERSION  = "3.0.0";
+  let PLUGIN_NAME     = "Formulario Agregar Material";
+  let PLUGIN_FASE     = 2;
+  let PLUGIN_MICRO    = "2.2";
+  let SCHEMA_REQ      = "3.0.0";
+  let DEPENDENCIAS    = ["FASE2_1"];
+  let PARENT_MODULE   = "fase2";
 
-  var _erp = null;
-  var initialized = false;
+  let _erp = null;
+  let initialized = false;
 
   // ─── CACHE DE ELEMENTOS DOM ───
   function $(id) { return document.getElementById(id); }
 
   // ─── GENERAR CODIGO AUTOMATICO ───
   function generarCodigo() {
-    var db = _erp.getDB();
-    var materias = db.materiasPrimas || [];
-    var maxNum = 0;
-    for (var i = 0; i < materias.length; i++) {
-      var cod = materias[i].codigo || "";
-      var match = cod.match(/MP(\d+)/);
+    let db = _erp.getDB();
+    let materias = db.materiasPrimas || [];
+    let maxNum = 0;
+    for (let i = 0; i < materias.length; i++) {
+      let cod = materias[i].codigo || "";
+      let match = cod.match(/MP(\d+)/);
       if (match) {
-        var num = parseInt(match[1], 10);
+        let num = parseInt(match[1], 10);
         if (num > maxNum) maxNum = num;
       }
     }
-    var next = maxNum + 1;
-    var codigo = "MP" + String(next).padStart(3, "0");
+    let next = maxNum + 1;
+    let codigo = "MP" + String(next).padStart(3, "0");
     return codigo;
   }
 
   // ─── VALIDAR CODIGO UNICO ───
   function codigoEsUnico(codigo, excluirId) {
-    var db = _erp.getDB();
-    var materias = db.materiasPrimas || [];
-    for (var i = 0; i < materias.length; i++) {
+    let db = _erp.getDB();
+    let materias = db.materiasPrimas || [];
+    for (let i = 0; i < materias.length; i++) {
       if (materias[i].id !== excluirId && (materias[i].codigo === codigo || materias[i].id === codigo)) {
         return false;
       }
@@ -56,20 +56,20 @@
 
   // ─── VALIDAR FORMULARIO ───
   function validarFormulario() {
-    var errores = [];
-    var inpCodigo = $("f22_inpCodigo");
-    var inpNombre = $("f22_inpNombre");
-    var inpStock = $("f22_inpStock");
-    var inpStockMin = $("f22_inpStockMin");
-    var inpCosto = $("f22_inpCosto");
-    var inpCategoria = $("f22_inpCategoria");
-    var inpUnidad = $("f22_inpUnidad");
+    let errores = [];
+    let inpCodigo = $("f22_inpCodigo");
+    let inpNombre = $("f22_inpNombre");
+    let inpStock = $("f22_inpStock");
+    let inpStockMin = $("f22_inpStockMin");
+    let inpCosto = $("f22_inpCosto");
+    let inpCategoria = $("f22_inpCategoria");
+    let inpUnidad = $("f22_inpUnidad");
 
-    var codigo = inpCodigo ? inpCodigo.value.trim() : "";
-    var nombre = inpNombre ? inpNombre.value.trim() : "";
-    var stock = parseFloat(inpStock ? inpStock.value : 0);
-    var stockMin = parseFloat(inpStockMin ? inpStockMin.value : 0);
-    var costo = parseFloat(inpCosto ? inpCosto.value : 0);
+    let codigo = inpCodigo ? inpCodigo.value.trim() : "";
+    let nombre = inpNombre ? inpNombre.value.trim() : "";
+    let stock = parseFloat(inpStock ? inpStock.value : 0);
+    let stockMin = parseFloat(inpStockMin ? inpStockMin.value : 0);
+    let costo = parseFloat(inpCosto ? inpCosto.value : 0);
 
     if (!codigo) errores.push("El codigo es obligatorio");
     if (!nombre) errores.push("El nombre es obligatorio");
@@ -85,17 +85,17 @@
 
   // ─── MOSTRAR ERRORES DE VALIDACION ───
   function mostrarErrores(errores) {
-    var container = $("f22_errorContainer");
+    let container = $("f22_errorContainer");
     if (!container) return;
     if (errores.length === 0) {
       container.style.display = "none";
       container.innerHTML = "";
       return;
     }
-    var html = '<div style="background:rgba(239,68,68,.15);border:1px solid #ef4444;border-radius:8px;padding:12px;margin-bottom:16px;">' +
+    let html = '<div style="background:rgba(239,68,68,.15);border:1px solid #ef4444;border-radius:8px;padding:12px;margin-bottom:16px;">' +
       '<div style="color:#ef4444;font-weight:600;font-size:13px;margin-bottom:6px;"><i class="fas fa-exclamation-circle"></i> Corrija los siguientes errores:</div>' +
       '<ul style="margin:0;padding-left:18px;color:#fca5a5;font-size:12px;">';
-    for (var i = 0; i < errores.length; i++) {
+    for (let i = 0; i < errores.length; i++) {
       html += "<li>" + errores[i] + "</li>";
     }
     html += "</ul></div>";
@@ -105,43 +105,42 @@
 
   // ─── LIMPIAR ERRORES ───
   function limpiarErrores() {
-    var container = $("f22_errorContainer");
+    let container = $("f22_errorContainer");
     if (container) {
       container.style.display = "none";
       container.innerHTML = "";
     }
-    // Quitar clase de error de los inputs
-    var inputs = ["f22_inpCodigo", "f22_inpNombre", "f22_inpStock", "f22_inpStockMin", "f22_inpCosto", "f22_inpCategoria", "f22_inpUnidad"];
-    for (var i = 0; i < inputs.length; i++) {
-      var el = $(inputs[i]);
+    let inputs = ["f22_inpCodigo", "f22_inpNombre", "f22_inpStock", "f22_inpStockMin", "f22_inpCosto", "f22_inpCategoria", "f22_inpUnidad"];
+    for (let i = 0; i < inputs.length; i++) {
+      let el = $(inputs[i]);
       if (el) el.style.borderColor = "#334155";
     }
   }
 
   // ─── MARCAR CAMPOS CON ERROR ───
   function marcarCampoError(fieldId) {
-    var el = $(fieldId);
+    let el = $(fieldId);
     if (el) el.style.borderColor = "#ef4444";
   }
 
   // ─── CARGAR CATEGORIAS Y UNIDADES EN SELECTS ───
   function loadCategories() {
-    var db = _erp.getDB();
-    var cats = db.categorias || [];
-    var unidades = db.unidades || [];
-    var inpCategoria = $("f22_inpCategoria");
-    var inpUnidad = $("f22_inpUnidad");
+    let db = _erp.getDB();
+    let cats = db.categorias || [];
+    let unidades = db.unidades || [];
+    let inpCategoria = $("f22_inpCategoria");
+    let inpUnidad = $("f22_inpUnidad");
 
     if (inpCategoria) {
-      var html = '<option value="">-- Seleccione --</option>';
-      for (var i = 0; i < cats.length; i++) {
+      let html = '<option value="">-- Seleccione --</option>';
+      for (let i = 0; i < cats.length; i++) {
         html += '<option value="' + cats[i].nombre + '">' + cats[i].nombre + "</option>";
       }
       inpCategoria.innerHTML = html;
     }
     if (inpUnidad) {
-      var html = '<option value="">-- Seleccione --</option>';
-      for (var i = 0; i < unidades.length; i++) {
+      let html = '<option value="">-- Seleccione --</option>';
+      for (let i = 0; i < unidades.length; i++) {
         html += '<option value="' + unidades[i].nombre + '">' + unidades[i].nombre + " (" + unidades[i].simbolo + ")</option>";
       }
       inpUnidad.innerHTML = html;
@@ -151,16 +150,20 @@
   // ─── ABRIR MODAL ───
   function openModal() {
     limpiarErrores();
-    var modal = $("f22_modal");
-    var inpCodigo = $("f22_inpCodigo");
-    var inpNombre = $("f22_inpNombre");
-    var inpStock = $("f22_inpStock");
-    var inpStockMin = $("f22_inpStockMin");
-    var inpCosto = $("f22_inpCosto");
-    var inpMoneda = $("f22_inpMoneda");
-    var inpCategoria = $("f22_inpCategoria");
-    var inpUnidad = $("f22_inpUnidad");
-    var inpDescripcion = $("f22_inpDescripcion");
+
+    // Asegurar que el modal esté en el DOM
+    injectModal();
+
+    let modal = $("f22_modal");
+    let inpCodigo = $("f22_inpCodigo");
+    let inpNombre = $("f22_inpNombre");
+    let inpStock = $("f22_inpStock");
+    let inpStockMin = $("f22_inpStockMin");
+    let inpCosto = $("f22_inpCosto");
+    let inpMoneda = $("f22_inpMoneda");
+    let inpCategoria = $("f22_inpCategoria");
+    let inpUnidad = $("f22_inpUnidad");
+    let inpDescripcion = $("f22_inpDescripcion");
 
     if (inpCodigo) inpCodigo.value = generarCodigo();
     if (inpNombre) inpNombre.value = "";
@@ -179,16 +182,15 @@
       modal.classList.add("active");
     }
 
-    // Focus en nombre
     setTimeout(function() {
-      var el = $("f22_inpNombre");
+      let el = $("f22_inpNombre");
       if (el) el.focus();
     }, 100);
   }
 
   // ─── CERRAR MODAL ───
   function closeModal() {
-    var modal = $("f22_modal");
+    let modal = $("f22_modal");
     if (modal) {
       modal.classList.remove("active");
       modal.style.display = "none";
@@ -200,44 +202,43 @@
   function saveMaterial() {
     limpiarErrores();
 
-    var errores = validarFormulario();
+    let errores = validarFormulario();
     if (errores.length > 0) {
       mostrarErrores(errores);
       return;
     }
 
-    var inpCodigo = $("f22_inpCodigo");
-    var inpNombre = $("f22_inpNombre");
-    var inpCategoria = $("f22_inpCategoria");
-    var inpUnidad = $("f22_inpUnidad");
-    var inpStock = $("f22_inpStock");
-    var inpStockMin = $("f22_inpStockMin");
-    var inpCosto = $("f22_inpCosto");
-    var inpMoneda = $("f22_inpMoneda");
-    var inpDescripcion = $("f22_inpDescripcion");
+    let inpCodigo = $("f22_inpCodigo");
+    let inpNombre = $("f22_inpNombre");
+    let inpCategoria = $("f22_inpCategoria");
+    let inpUnidad = $("f22_inpUnidad");
+    let inpStock = $("f22_inpStock");
+    let inpStockMin = $("f22_inpStockMin");
+    let inpCosto = $("f22_inpCosto");
+    let inpMoneda = $("f22_inpMoneda");
+    let inpDescripcion = $("f22_inpDescripcion");
 
-    var codigo = inpCodigo ? inpCodigo.value.trim() : "";
-    var nombre = inpNombre ? inpNombre.value.trim() : "";
-    var categoria = inpCategoria ? inpCategoria.value : "";
-    var unidad = inpUnidad ? inpUnidad.value : "";
-    var stock = parseFloat(inpStock ? inpStock.value : 0) || 0;
-    var stockMin = parseFloat(inpStockMin ? inpStockMin.value : 0) || 0;
-    var costo = parseFloat(inpCosto ? inpCosto.value : 0) || 0;
-    var moneda = inpMoneda ? inpMoneda.value : "VES";
-    var descripcion = inpDescripcion ? inpDescripcion.value.trim() : "";
+    let codigo = inpCodigo ? inpCodigo.value.trim() : "";
+    let nombre = inpNombre ? inpNombre.value.trim() : "";
+    let categoria = inpCategoria ? inpCategoria.value : "";
+    let unidad = inpUnidad ? inpUnidad.value : "";
+    let stock = parseFloat(inpStock ? inpStock.value : 0) || 0;
+    let stockMin = parseFloat(inpStockMin ? inpStockMin.value : 0) || 0;
+    let costo = parseFloat(inpCosto ? inpCosto.value : 0) || 0;
+    let moneda = inpMoneda ? inpMoneda.value : "VES";
+    let descripcion = inpDescripcion ? inpDescripcion.value.trim() : "";
 
-    // Validar codigo unico
     if (!codigoEsUnico(codigo, null)) {
       mostrarErrores(["El codigo '" + codigo + "' ya existe. Use otro codigo."]);
       marcarCampoError("f22_inpCodigo");
       return;
     }
 
-    var db = _erp.getDB();
+    let db = _erp.getDB();
     if (!db.materiasPrimas) db.materiasPrimas = [];
 
-    var newId = _erp.genId("MP");
-    var nuevoMaterial = {
+    let newId = _erp.genId("MP");
+    let nuevoMaterial = {
       id: newId,
       codigo: codigo,
       nombre: nombre,
@@ -258,12 +259,9 @@
     closeModal();
     _erp.showToast("success", "Guardado", "Material '" + nombre + "' agregado correctamente (" + codigo + ")");
 
-    // Refrescar tabla del modulo padre FASE2_1
     if (window.FASE2_1 && window.FASE2_1.refresh) {
       window.FASE2_1.refresh();
     }
-
-    // Notificar al modulo padre FASE2
     if (window.FASE2_PADRE && window.FASE2_PADRE.render) {
       window.FASE2_PADRE.render();
     }
@@ -271,35 +269,34 @@
 
   // ─── EVENT LISTENERS ───
   function bindEvents() {
-    var btnClose = $("f22_modalClose");
-    var btnCancel = $("f22_btnCancel");
-    var btnSave = $("f22_btnSave");
-    var btnGenCodigo = $("f22_btnGenCodigo");
-    var modal = $("f22_modal");
+    let btnClose = $("f22_modalClose");
+    let btnCancel = $("f22_btnCancel");
+    let btnSave = $("f22_btnSave");
+    let btnGenCodigo = $("f22_btnGenCodigo");
+    let modal = $("f22_modal");
 
     if (btnClose) btnClose.onclick = closeModal;
     if (btnCancel) btnCancel.onclick = closeModal;
     if (btnSave) btnSave.onclick = saveMaterial;
     if (btnGenCodigo) btnGenCodigo.onclick = function() {
-      var inpCodigo = $("f22_inpCodigo");
+      let inpCodigo = $("f22_inpCodigo");
       if (inpCodigo) inpCodigo.value = generarCodigo();
     };
     if (modal) {
       modal.onclick = function(e) { if (e.target === modal) closeModal(); };
     }
 
-    // Enter en inputs para navegar
-    var inputs = ["f22_inpCodigo", "f22_inpNombre", "f22_inpCategoria", "f22_inpUnidad",
+    let inputs = ["f22_inpCodigo", "f22_inpNombre", "f22_inpCategoria", "f22_inpUnidad",
                   "f22_inpStock", "f22_inpStockMin", "f22_inpCosto", "f22_inpMoneda"];
-    for (var i = 0; i < inputs.length; i++) {
+    for (let i = 0; i < inputs.length; i++) {
       (function(idx) {
-        var el = $(inputs[idx]);
+        let el = $(inputs[idx]);
         if (el) {
           el.onkeydown = function(e) {
             if (e.key === "Enter") {
               e.preventDefault();
               if (idx < inputs.length - 1) {
-                var next = $(inputs[idx + 1]);
+                let next = $(inputs[idx + 1]);
                 if (next) next.focus();
               } else {
                 saveMaterial();
@@ -313,17 +310,36 @@
 
   // ─── INYECTAR MODAL EN DOM ───
   function injectModal() {
-    var modalsSlot = $(PARENT_MODULE + "-slot-modals");
-    if (!modalsSlot) return;
-    var existente = $("f22_modal");
-    if (!existente) {
-      modalsSlot.innerHTML = modalsSlot.innerHTML + MODAL_HTML;
-      bindEvents();
+    let existente = $("f22_modal");
+    if (existente) return; // Ya está inyectado
+
+    // Intentar inyectar en el slot de modals del padre
+    let modalsSlot = $(PARENT_MODULE + "-slot-modals");
+    if (modalsSlot) {
+      modalsSlot.insertAdjacentHTML("beforeend", MODAL_HTML);
+    } else {
+      // Fallback: inyectar al final del body
+      document.body.insertAdjacentHTML("beforeend", MODAL_HTML);
+    }
+    bindEvents();
+  }
+
+  // ─── SOBRESCRIBIR BOTON NUEVO MATERIAL DEL PADRE ───
+  function hookParentButtons() {
+    // 1. Sobrescribir el botón del toolbar del módulo padre (via ERP API)
+    if (_erp && _erp.enableButton) {
+      _erp.enableButton(PARENT_MODULE, "nuevo-mat", openModal, "Nuevo Material", "fa-box");
+    }
+
+    // 2. Sobrescribir el botón interno de la tabla de FASE2_1 (f21_btnAdd)
+    let btnAdd = $("f21_btnAdd");
+    if (btnAdd) {
+      btnAdd.onclick = openModal;
     }
   }
 
   // ─── HTML DEL MODAL ───
-  var MODAL_HTML = '<div class="modal-overlay" id="f22_modal" style="display:none;align-items:center;justify-content:center;">' +
+  let MODAL_HTML = '<div class="modal-overlay" id="f22_modal" style="display:none;align-items:center;justify-content:center;">' +
     '<div class="modal-content" style="background:#1e293b;border:1px solid #334155;border-radius:12px;width:100%;max-width:650px;max-height:92vh;overflow-y:auto;">' +
       '<div class="modal-header" style="padding:20px;border-bottom:1px solid #334155;display:flex;align-items:center;justify-content:space-between;">' +
         '<div style="display:flex;align-items:center;gap:10px;">' +
@@ -391,13 +407,12 @@
   '</div>';
 
   // ─── CSS SCOPED ───
-  var PLUGIN_CSS = [
+  let PLUGIN_CSS = [
     "/* FASE2_2 - Formulario Agregar Material */",
-    "#mod-fase2-2 .f22-wrapper { padding: 0; }",
     "#mod-fase2-2 #f22_modal.active { display: flex !important; }",
-    "#mod-fase2-2 #f22_modal { z-index: 2600; position: fixed; inset: 0; background: rgba(0,0,0,.7); }",
+    "#mod-fase2-2 #f22_modal { z-index: 2600; position: fixed; inset: 0; background: rgba(0,0,0,.7); display: none; }",
     "#mod-fase2-2 #f22_modal .modal-content { animation: f22-slideIn 0.2s ease-out; }",
-    "@keyframes f22-slideIn { from { opacity: 0; transform: translateY(-20px) scale(0.98); } to { opacity: 1; transform: translateY(0) scale(1); } }",
+    "#mod-fase2-2 @keyframes f22-slideIn { from { opacity: 0; transform: translateY(-20px) scale(0.98); } to { opacity: 1; transform: translateY(0) scale(1); } }",
     "#mod-fase2-2 #f22_inpCodigo { font-family: monospace; font-weight: 600; color: #3b82f6; }",
     "#mod-fase2-2 #f22_btnGenCodigo { transition: all 0.2s; }",
     "#mod-fase2-2 #f22_btnGenCodigo:hover { background: #3b82f6; color: #fff; }",
@@ -412,18 +427,20 @@
     initialized = true;
 
     // Inyectar CSS
-    var styleId = "erp-css-" + PLUGIN_ID;
-    var existente = $(styleId);
+    let styleId = "erp-css-" + PLUGIN_ID;
+    let existente = $(styleId);
     if (existente) existente.remove();
-    var style = document.createElement("style");
+    let style = document.createElement("style");
     style.id = styleId;
     style.textContent = PLUGIN_CSS;
     document.head.appendChild(style);
 
-    // Inyectar modal en el slot del padre
+    // Inyectar modal
     injectModal();
 
-    console.log("[" + PLUGIN_ID + "] Plugin inicializado correctamente v" + PLUGIN_VERSION);
+    // Sobrescribir botones del padre para usar nuestro modal
+    hookParentButtons();
+
   }
 
   // ═══════════════════════════════════════════════════════════════════════════════
@@ -449,7 +466,7 @@
   // DEFINICION DEL PLUGIN
   // ═══════════════════════════════════════════════════════════════════════════════
 
-  var pluginDef = {
+  let pluginDef = {
     id: "FASE2_2",
     nombre: PLUGIN_NAME,
     version: PLUGIN_VERSION,
@@ -470,13 +487,15 @@
       _erp = erp;
       setTimeout(function() {
         initPlugin();
-      }, 300);
+      }, 500);
     },
 
     onShow: function(erp) {
       _erp = erp;
       if (!initialized) {
         initPlugin();
+      } else {
+        hookParentButtons();
       }
     }
   };
@@ -484,7 +503,6 @@
   // ─── REGISTRAR PLUGIN ───
   if (typeof erp !== "undefined" && erp.registerPlugin) {
     erp.registerPlugin(pluginDef);
-    console.log("[" + PLUGIN_ID + "] Plugin registrado correctamente v" + PLUGIN_VERSION);
   } else {
     console.error("[" + PLUGIN_ID + "] ERP no disponible. No se pudo registrar.");
   }
