@@ -1,15 +1,14 @@
-// FASE 2.2 - FORMULARIO AGREGAR MATERIAL v3.0.3
+// FASE 2.2 - FORMULARIO AGREGAR MATERIAL v3.0.4
 // ERP Core v3.0 - Plugin JS
 
 (function(){
 "use strict";
 
-var PID="FASE2_2",PVER="3.0.3",PNAME="Formulario Agregar Material";
+var PID="FASE2_2",PVER="3.0.4",PNAME="Formulario Agregar Material";
 var PARENT="fase2",_erp=null,ready=false;
 
 function $(id){return document.getElementById(id);}
 
-// ── GENERAR CODIGO ──
 function genCodigo(){
   var db=_erp.getDB(),m=db.materiasPrimas||[],mx=0;
   for(var i=0;i<m.length;i++){
@@ -70,15 +69,12 @@ function openModal(){
   var c=$("f22_cod"),n=$("f22_nom"),s=$("f22_stk"),sm=$("f22_min"),co=$("f22_cost"),mo=$("f22_mon"),ca=$("f22_cat"),u=$("f22_uni"),de=$("f22_desc");
   if(c)c.value=genCodigo();if(n)n.value="";if(s)s.value="0";if(sm)sm.value="0";if(co)co.value="0";if(mo)mo.value="VES";if(ca)ca.value="";if(u)u.value="";if(de)de.value="";
   cargarSelects();
-  m.style.display="flex";m.style.opacity="0";
-  setTimeout(function(){m.style.opacity="1";m.style.transition="opacity .2s";},10);
+  m.style.display="flex";
   setTimeout(function(){var el=$("f22_nom");if(el)el.focus();},100);
 }
 
 function closeModal(){
-  var m=$("f22_modal");if(!m)return;
-  m.style.opacity="0";
-  setTimeout(function(){m.style.display="none";},200);
+  var m=$("f22_modal");if(m)m.style.display="none";
   limpiarErr();
 }
 
@@ -113,43 +109,35 @@ function injectModal(){
   if(MODAL_INJECTED||$("f22_modal")){MODAL_INJECTED=true;return;}
   var slot=$(PARENT+"-slot-modals");
   if(slot)slot.insertAdjacentHTML("beforeend",MODAL_HTML);else document.body.insertAdjacentHTML("beforeend",MODAL_HTML);
-  bindEvents();MODAL_INJECTED=true;console.log("[FASE2_2] Modal inyectado");
+  bindEvents();MODAL_INJECTED=true;
 }
 
-// ── REEMPLAZAR BOTON (no modificar, reemplazar) ──
+// ── REEMPLAZAR BOTON ──
 function activarBoton(){
   var oldBtn=$("fase2-btn-nuevo-mat");
   if(!oldBtn)return;
-  // Si ya fue reemplazado, no hacer nada
-  if(oldBtn.getAttribute("data-f22-hooked"))return;
-
-  var parent=oldBtn.parentNode;
-  if(!parent)return;
-
-  // Crear boton nuevo clonado pero sin onclick inline
+  if(oldBtn.getAttribute("data-f22"))return;
+  var parent=oldBtn.parentNode;if(!parent)return;
   var newBtn=document.createElement("button");
   newBtn.id="fase2-btn-nuevo-mat";
   newBtn.className=oldBtn.className;
   newBtn.innerHTML='<i class="fas fa-box"></i> Nuevo Material';
-  newBtn.setAttribute("data-f22-hooked","1");
+  newBtn.setAttribute("data-f22","1");
   newBtn.style.opacity="1";
   newBtn.style.cursor="pointer";
   newBtn.onclick=function(e){e.preventDefault();e.stopPropagation();openModal();return false;};
-
   parent.replaceChild(newBtn,oldBtn);
-  console.log("[FASE2_2] Boton reemplazado y activado");
 }
 
 // ── CSS ──
 var CSS='#f22_modal{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:2600;display:none;align-items:center;justify-content:center;padding:20px}'+
-  '#f22_modal{opacity:0;transition:opacity .2s}'+
-  '@keyframes f22in{from{opacity:0;transform:translateY(-20px) scale(.98)}to{opacity:1;transform:translateY(0) scale(1)}}'+
+  '#f22_modal>div{background:#1e293b;border:1px solid #334155;border-radius:12px;width:100%;max-width:650px;max-height:92vh;overflow-y:auto}'+
   '#f22_cod{font-family:monospace;font-weight:600;color:#3b82f6}'+
   '#f22_gen:hover{background:#3b82f6!important;color:#fff!important}'+
   '#f22_modal input:focus,#f22_modal select:focus,#f22_modal textarea:focus{outline:none;border-color:#3b82f6!important;box-shadow:0 0 0 2px rgba(59,130,246,.2)}';
 
-var MODAL_HTML='<div id="f22_modal" style="display:none">'+
-'<div style="background:#1e293b;border:1px solid #334155;border-radius:12px;width:100%;max-width:650px;max-height:92vh;overflow-y:auto;animation:f22in .2s ease-out">'+
+var MODAL_HTML='<div id="f22_modal">'+
+'<div>'+
 '<div style="padding:20px;border-bottom:1px solid #334155;display:flex;align-items:center;justify-content:space-between">'+
 '<div style="display:flex;align-items:center;gap:10px"><div style="width:36px;height:36px;border-radius:8px;background:rgba(59,130,246,.15);display:flex;align-items:center;justify-content:center;color:#3b82f6;font-size:16px"><i class="fas fa-plus-circle"></i></div>'+
 '<div><div style="font-size:16px;font-weight:600;color:#f1f5f9">Agregar Nuevo Material</div><div style="font-size:11px;color:#94a3b8;margin-top:2px">Complete todos los campos obligatorios (*)</div></div></div>'+
@@ -175,7 +163,6 @@ function init(){
   var s=document.createElement("style");s.id="erp-css-"+PID;s.textContent=CSS;document.head.appendChild(s);
   injectModal();
   activarBoton();
-  console.log("[FASE2_2] Inicializado v"+PVER);
 }
 
 // ── API GLOBAL ──
